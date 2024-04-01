@@ -1,40 +1,68 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet } from "react-native";
-import { View, Text } from "tamagui";
+import { Dimensions, Keyboard, StyleSheet } from "react-native";
+import { View, Text, ScrollView } from "tamagui";
 import { mainPurple } from "../../utils/main.styles";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import * as WebBrowser from "expo-web-browser";
+import { ReduxStoreInterface } from "../../Redux/store";
+import { useSelector } from "react-redux";
+import LoginButton from "../../components/SettingsComponents/LoginButton";
+import LogoutButton from "../../components/SettingsComponents/LogoutButton";
+import UserInfo from "../../components/SettingsComponents/UserInfo";
 
 export default function App() {
+  const windowHeight = Dimensions.get("window").height;
+  const isUserLoggedIn = useSelector(
+    (state: ReduxStoreInterface) => state.authUser.userLoggedIn
+  );
+
   return (
-    <View style={styles.container}>
-      <Text fontSize={"$8"}>User Management Coming Soon 🚀</Text>
-
-      <View height={20} />
-
-      <View>
-        <TouchableOpacity
-          onPress={async () => {
-            await WebBrowser.openBrowserAsync(
-              `https://github.com/sidpremkumar/HNews`
-            );
-          }}
+    <ScrollView height={windowHeight} paddingTop={100}>
+      <View
+        justifyContent="center"
+        alignItems="center"
+        alignContent="center"
+        width={"100%"}
+      >
+        <View
+          style={styles.container}
+          onTouchStart={() => Keyboard.dismiss()}
+          width={"90%"}
         >
-          <View backgroundColor={mainPurple} padding={15} borderRadius={10}>
-            <Text color="white" fontSize={"$7"}>
-              SourceCode
-            </Text>
+          <View width={"100%"}>
+            <UserInfo />
           </View>
-        </TouchableOpacity>
+
+          <View width={"100%"}>
+            {isUserLoggedIn === true ? <LogoutButton /> : <LoginButton />}
+          </View>
+
+          <View height={10} />
+
+          <View width={"100%"}>
+            <TouchableOpacity
+              onPress={async () => {
+                await WebBrowser.openBrowserAsync(
+                  `https://github.com/sidpremkumar/HNews`
+                );
+              }}
+            >
+              <View backgroundColor={mainPurple} padding={15} borderRadius={10}>
+                <Text color="white" fontSize={"$7"}>
+                  Source Code
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    // backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },

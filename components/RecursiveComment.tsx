@@ -14,6 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import { setCurrentlyViewingUser } from "../Redux/userStateReducer";
 import { router } from "expo-router";
 import BlinkInWrapper from "./BlinkInWrapper";
+import getRelativeOrAbsoluteTime from "../utils/getRelativeOrAbsoluteTime";
 
 export const webViewScript = `
 (function() {
@@ -44,6 +45,8 @@ const RecursiveComment: React.FC<{
   const commentTime = dayjs((commentData?.time ?? 0) * 1000);
   const commentText = commentData?.text ?? "";
 
+  let commentTimeText = getRelativeOrAbsoluteTime(commentTime);
+
   const toggleShowChildren = () => {
     setShowChildren(!showBody);
     setShowBody(!showBody);
@@ -72,28 +75,22 @@ const RecursiveComment: React.FC<{
                   toggleShowChildren();
                 }}
               >
-                <TouchableOpacity
-                  onPress={() => {
-                    dispatch(
-                      setCurrentlyViewingUser({
-                        newState: commentData.by ?? "",
-                      })
-                    );
-                    router.push("/user");
-                  }}
-                >
-                  <Text color={mainGrey}>{commentData.by}</Text>
-                </TouchableOpacity>
+                <View alignItems="flex-start">
+                  <TouchableOpacity
+                    onPress={() => {
+                      dispatch(
+                        setCurrentlyViewingUser({
+                          newState: commentData.by ?? "",
+                        })
+                      );
+                      router.push("/user");
+                    }}
+                  >
+                    <Text color={mainGrey}>{commentData.by}</Text>
+                  </TouchableOpacity>
+                </View>
 
-                <TouchableOpacity
-                  onPress={() => {
-                    toggleShowChildren();
-                  }}
-                >
-                  <Text color={mainGrey}>
-                    {commentTime.format("DD MMM, YYYY")}
-                  </Text>
-                </TouchableOpacity>
+                <Text color={mainGrey}>{commentTimeText}</Text>
                 <View
                   width={"100%"}
                   justifyContent="center"

@@ -34,7 +34,7 @@ export default function App() {
         }}
         ListHeaderComponent={
           <View marginLeft={10} marginBottom={10}>
-            <Text fontSize={"$5"}>{today.format("ddd DD, YYYY")}</Text>
+            <Text fontSize={"$5"}>{today.format("dddd DD MMMM, YYYY")}</Text>
             <View flexDirection="row" marginTop={5}>
               <Image
                 src={require("../../assets/images/ycLogo.png")}

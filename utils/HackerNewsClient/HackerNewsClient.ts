@@ -1,7 +1,10 @@
+import * as Keychain from "react-native-keychain";
+import CookieManager from "@react-native-cookies/cookies";
 import Bluebird from "bluebird";
 import {
   GetCommentResponseRaw,
   GetStoryResponseRaw,
+  GetUserResponseRaw,
 } from "./HackerNewsClient.types";
 
 class HackerNewsClient {
@@ -119,6 +122,101 @@ class HackerNewsClient {
     const url = new URL(`user/${userId}.json?print=pretty`, this.baseURL).href;
     const userInfo = await fetch(url).then((res) => res.json());
     return userInfo;
+  }
+
+  private getLoginURL() {
+    const url = new URL(`login`, "https://news.ycombinator.com/").href;
+    return url;
+  }
+  /**
+   * Hit the login endpoint and save cookies if we can
+   */
+  async loginWithCredentials(username: string, password: string) {
+    /**
+     * First clear out any cookies that might exists
+     */
+    await CookieManager.clearAll();
+
+    const headers = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Access-Control-Allow-Origin": "*",
+    };
+
+    const url = this.getLoginURL();
+    const result = await fetch(url, {
+      method: "POST",
+      body: new URLSearchParams({
+        acct: username,
+        pw: password,
+        goto: "news",
+      }).toString(),
+      credentials: "include",
+      headers: headers,
+    });
+
+    if (result.status !== 200) {
+      return false;
+    }
+
+    /**
+     * Make sure a cookies get saved
+     */
+    const cookies = await CookieManager.get(url);
+    if (!cookies.user || !cookies.user.value) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Logout a user
+   */
+  async logout() {
+    await Promise.all([
+      Keychain.resetGenericPassword(),
+      CookieManager.clearAll(),
+    ]);
+  }
+
+  /**
+   * Check if a user is logged in
+   */
+  async isLoggedIn() {
+    /**
+     * Check if we have auth info set
+     */
+    const credentials = await Keychain.getGenericPassword();
+    if (credentials) {
+      return credentials;
+    }
+    return false;
+  }
+
+  /**
+   * Attempt to login with a username and passowrd. Return T/F if these are
+   * valid credentials
+   * @note This function will attempt to save username/password to storage
+   */
+  async validateAndSaveCredentials(
+    username: string,
+    password: string
+  ): Promise<boolean> {
+    /**
+     * Validate credentials
+     */
+    const validCredentials = await this.loginWithCredentials(
+      username,
+      password
+    );
+    if (!validCredentials) return false;
+
+    /**
+     * Nice its 200, lets save these creds
+     */
+    await Keychain.setGenericPassword(username, password);
+
+    return true;
   }
 }
 

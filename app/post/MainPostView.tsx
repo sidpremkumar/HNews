@@ -19,6 +19,9 @@ import { Dimensions } from "react-native";
 import CommentsView from "./CommentsView";
 import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
 import WebView from "react-native-webview";
+import { webViewScript } from "../../components/RecursiveComment";
+import RenderLinkIcon from "../../components/RenderLinkIcon";
+import getRelativeOrAbsoluteTime from "../../utils/getRelativeOrAbsoluteTime";
 
 const MainPostView: React.FC<{}> = () => {
   const dispatch = useDispatch();
@@ -136,89 +139,53 @@ const MainPostView: React.FC<{}> = () => {
                       {emoji}
                       {postMetadata?.storyData?.title}
                     </Text>
-
-                    {postMetadata?.storyData?.text ? (
-                      <View>
-                        <WebView
-                          injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
-$(this).scrollTop(0);
-});"
-                          source={{
-                            html: `<html>
-<head><meta name="viewport" content="width=device-width"></head>
-<body>${postMetadata?.storyData?.text}</body>
-</html>`,
-                          }}
-                          scrollEnabled={true}
-                          ref={webViewRef}
-                          onLoadEnd={() =>
-                            // @ts-ignore
-                            webViewRef.current?.injectJavaScript(webViewScript)
-                          }
-                          style={{ flex: 1, height: webviewHeight }}
-                          onMessage={(e: {
-                            nativeEvent: { data?: string };
-                          }) => {
-                            setWebviewHeight(Number(e.nativeEvent.data));
-                          }}
-                          onShouldStartLoadWithRequest={(request: {
-                            url: string;
-                          }) => {
-                            if (request.url !== "about:blank") {
-                              WebBrowser.openBrowserAsync(request.url);
-                              return false;
-                            } else return true;
-                          }}
-                        />
-                      </View>
-                    ) : (
-                      <></>
-                    )}
                   </View>
 
                   <View width={"25%"} height={"100%"}>
-                    <View
-                      height={100}
-                      width={100}
-                      borderRadius={10}
-                      overflow="hidden"
-                    >
-                      {imageURL === undefined ? (
-                        <View
-                          height={100}
-                          width={100}
-                          backgroundColor={spotifyBlack}
-                          justifyContent="center"
-                          alignItems="center"
-                          alignContent="center"
-                        >
-                          <Text fontSize={"$10"} color={"white"}>
-                            {urlDomain.replace("www.", "")[0]
-                              ? urlDomain
-                                  .replace("www.", "")[0]
-                                  .toLocaleUpperCase()
-                              : ""}
-                          </Text>
-                        </View>
-                      ) : (
-                        <Image
-                          source={{ uri: imageURL }}
-                          height={100}
-                          width={windowWidth * 0.23}
-                          resizeMode="contain"
-                          resizeMethod="scale"
-                          onError={(err) => {
-                            /**
-                             * @note removed error here since it wasn't very useful
-                             */
-                            console.log(`Error loading link preview`);
-                            setImageURL(undefined);
-                          }}
-                        />
-                      )}
-                    </View>
+                    <RenderLinkIcon
+                      urlDomain={urlDomain}
+                      imageURL={imageURL}
+                      setImageURL={setImageURL}
+                    />
                   </View>
                 </View>
+
+                {/* text body if it exists */}
+                {postMetadata?.storyData?.text ? (
+                  <View>
+                    <WebView
+                      injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
+$(this).scrollTop(0);
+});"
+                      source={{
+                        html: `<html>
+<head><meta name="viewport" content="width=device-width"></head>
+<body>${postMetadata?.storyData?.text}</body>
+</html>`,
+                      }}
+                      scrollEnabled={true}
+                      ref={webViewRef}
+                      onLoadEnd={() =>
+                        // @ts-ignore
+                        webViewRef.current?.injectJavaScript(webViewScript)
+                      }
+                      style={{ flex: 1, height: webviewHeight }}
+                      onMessage={(e: { nativeEvent: { data?: string } }) => {
+                        setWebviewHeight(Number(e.nativeEvent.data));
+                      }}
+                      onShouldStartLoadWithRequest={(request: {
+                        url: string;
+                      }) => {
+                        if (request.url !== "about:blank") {
+                          WebBrowser.openBrowserAsync(request.url);
+                          return false;
+                        } else return true;
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <></>
+                )}
 
                 {/* Show info on the URL */}
                 <Text fontSize={"$3"} color={mainPurple}>
@@ -250,8 +217,8 @@ $(this).scrollTop(0);
 
                   <Text color={mainGrey}> • </Text>
                   <Text color={mainGrey}>
-                    {dayjs((postMetadata?.storyData?.time ?? 0) * 1000).format(
-                      "ddd MMM DD, YYYY"
+                    {getRelativeOrAbsoluteTime(
+                      dayjs((postMetadata?.storyData?.time ?? 0) * 1000)
                     )}
                   </Text>
                 </View>

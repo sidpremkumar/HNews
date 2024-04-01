@@ -26,6 +26,8 @@ import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
 import { ReduxStoreInterface } from "../../Redux/store";
 import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
 import BlinkInWrapper from "../BlinkInWrapper";
+import RenderLinkIcon from "../RenderLinkIcon";
+import getRelativeOrAbsoluteTime from "../../utils/getRelativeOrAbsoluteTime";
 
 const HNArticleRoot: React.FC<{
   postId: number;
@@ -100,7 +102,6 @@ const HNArticle: React.FC<{
   const dispatch = useDispatch();
   const emoji = `${domainToEmoji(urlDomain)}`;
   const [imageURL, setImageURL] = useState<string | undefined>(undefined);
-  const windowWidth = Dimensions.get("window").width;
 
   useEffect(() => {
     Promise.resolve().then(async () => {
@@ -134,14 +135,14 @@ const HNArticle: React.FC<{
             </Text>
             <Text fontSize={"$3"}>
               {" "}
-              - {dayjs(storyData.time * 1000).format("MMM DD, YYYY")}
+              - {getRelativeOrAbsoluteTime(dayjs(storyData.time * 1000))}
             </Text>
           </View>
 
           <View flexDirection="row">
             <View width={"75%"}>
               <View marginTop={5}>
-                <Text fontSize={"$5"}>
+                <Text fontSize={"$5"} marginRight={3}>
                   {emoji}
                   {storyData.title}
                 </Text>
@@ -188,40 +189,11 @@ const HNArticle: React.FC<{
                 ...mainStyles.mainShadow,
               }}
             >
-              <View
-                height={100}
-                width={100}
-                borderRadius={10}
-                overflow="hidden"
-              >
-                {imageURL === undefined ? (
-                  <View
-                    height={100}
-                    width={100}
-                    backgroundColor={spotifyBlack}
-                    justifyContent="center"
-                    alignItems="center"
-                    alignContent="center"
-                  >
-                    <Text fontSize={"$10"} color={"white"}>
-                      {urlDomain.replace("www.", "")[0]
-                        ? urlDomain.replace("www.", "")[0].toLocaleUpperCase()
-                        : ""}
-                    </Text>
-                  </View>
-                ) : (
-                  <Image
-                    source={{ uri: imageURL }}
-                    height={100}
-                    width={100}
-                    resizeMode="cover"
-                    onError={(err) => {
-                      console.log(`Error loading link preview`, err);
-                      setImageURL(undefined);
-                    }}
-                  />
-                )}
-              </View>
+              <RenderLinkIcon
+                urlDomain={urlDomain}
+                imageURL={imageURL}
+                setImageURL={setImageURL}
+              />
             </View>
           </View>
         </TouchableOpacity>

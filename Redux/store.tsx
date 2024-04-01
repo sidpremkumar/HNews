@@ -3,11 +3,13 @@ import postStateReducer from "./postStateReducer";
 import { useDispatch } from "react-redux";
 import homeScreenReducer from "./homeScreenReducer";
 import userStateReducer from "./userStateReducer";
+import authUserReducer from "./authUserReducer";
 
 const appReducer = combineReducers({
   postState: postStateReducer,
   userState: userStateReducer,
   homeScreen: homeScreenReducer,
+  authUser: authUserReducer,
 });
 
 // @ts-ignore

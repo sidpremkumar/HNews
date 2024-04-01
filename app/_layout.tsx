@@ -3,17 +3,21 @@ import { StyleSheet, StatusBar } from "react-native";
 // only import this from your web app, not native
 import "@tamagui/core/reset.css";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { GluestackUIProvider } from "@gluestack-ui/themed";
+import { config } from "@gluestack-ui/config"; // Optional if you want to use default theme
 
-import { TamaguiProvider } from "tamagui";
+import { PortalProvider, TamaguiProvider } from "tamagui";
 import tamaguiConfig from "../tamagui.config";
 import { SplashScreen, Stack, router } from "expo-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useIsNavigationReady } from "../utils/isNavigationReady";
-import { Provider } from "react-redux";
+import { Provider, useDispatch } from "react-redux";
 import store from "../Redux/store";
 import dayjs from "dayjs";
 import { NODE_ENV } from "../utils/consts";
 import * as Updates from "expo-updates";
+import HackerNewsClient from "../utils/HackerNewsClient/HackerNewsClient";
+import { setUserLoggedIn, setUserName } from "../Redux/authUserReducer";
 
 /**
  * Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -72,7 +76,9 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <_RootLayout />
+        <GluestackUIProvider config={config}>
+          <_RootLayout />
+        </GluestackUIProvider>
       </GestureHandlerRootView>
     </Provider>
   );
@@ -80,12 +86,26 @@ export default function RootLayout() {
 
 function _RootLayout() {
   const isNavigationReady = useIsNavigationReady();
+  const dispatch = useDispatch();
   useEffect(() => {
     if (isNavigationReady === false) return;
 
     console.log(`Routing to home`);
     router.replace("/home");
   }, [isNavigationReady]);
+
+  useEffect(() => {
+    /**
+     * Always check if the user is logged in when loading the app
+     */
+    Promise.resolve().then(async () => {
+      const isLoggedIn = await HackerNewsClient.isLoggedIn();
+      if (isLoggedIn !== false) {
+        dispatch(setUserLoggedIn({ newState: true }));
+        dispatch(setUserName({ newState: isLoggedIn.username }));
+      }
+    });
+  }, []);
 
   return (
     <TamaguiProvider config={tamaguiConfig}>
