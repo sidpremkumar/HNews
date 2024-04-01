@@ -1,4 +1,8 @@
 export default function domainToEmoji(urlDomain: string) {
+  if (urlDomain.includes("github.io")) {
+    return "👾 ";
+  }
+
   let emoji = "";
   switch (urlDomain.replaceAll("www.", "")) {
     case "universetoday.com": {
@@ -8,6 +12,7 @@ export default function domainToEmoji(urlDomain: string) {
     case "washingtonpost.com":
     case "nymag.com":
     case "nytimes.com":
+    case "theguardian.com":
     case "theatlantic.com": {
       emoji = "📰 ";
       break;

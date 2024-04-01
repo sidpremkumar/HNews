@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Feather } from "@expo/vector-icons";
 import { setCurrentlyViewingUser } from "../Redux/userStateReducer";
 import { router } from "expo-router";
+import BlinkInWrapper from "./BlinkInWrapper";
 
 export const webViewScript = `
 (function() {
@@ -55,149 +56,153 @@ const RecursiveComment: React.FC<{
           <ActivityIndicator />
         </View>
       ) : (
-        <View
-          borderLeftWidth={depth === 0 ? 0 : 5}
-          borderLeftColor={"#fb651f"}
-          backgroundColor={"white"}
-          style={{
-            ...mainStyles.mainShadow,
-            borderRadius: 10,
-          }}
-        >
-          <View marginLeft={5}>
-            <TouchableOpacity
-              onPress={() => {
-                toggleShowChildren();
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => {
-                  dispatch(
-                    setCurrentlyViewingUser({
-                      newState: commentData.by ?? "",
-                    })
-                  );
-                  router.push("/user");
-                }}
-              >
-                <Text color={mainGrey}>{commentData.by}</Text>
-              </TouchableOpacity>
-
+        <BlinkInWrapper>
+          <View
+            borderLeftWidth={depth === 0 ? 0 : 5}
+            borderLeftColor={"#fb651f"}
+            backgroundColor={"white"}
+            style={{
+              ...mainStyles.mainShadow,
+              borderRadius: 10,
+            }}
+          >
+            <View marginLeft={5}>
               <TouchableOpacity
                 onPress={() => {
                   toggleShowChildren();
                 }}
               >
-                <Text color={mainGrey}>
-                  {commentTime.format("DD MMM, YYYY")}
-                </Text>
-              </TouchableOpacity>
-              <View
-                width={"100%"}
-                justifyContent="center"
-                alignContent="center"
-                alignItems="center"
-                marginVertical={3}
-              >
-                <View
-                  backgroundColor={"black"}
-                  width={"98%"}
-                  height={1}
-                  opacity={0.2}
-                />
-              </View>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    dispatch(
+                      setCurrentlyViewingUser({
+                        newState: commentData.by ?? "",
+                      })
+                    );
+                    router.push("/user");
+                  }}
+                >
+                  <Text color={mainGrey}>{commentData.by}</Text>
+                </TouchableOpacity>
 
-            {showBody === true ? (
-              <View>
-                <WebView
-                  injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
+                <TouchableOpacity
+                  onPress={() => {
+                    toggleShowChildren();
+                  }}
+                >
+                  <Text color={mainGrey}>
+                    {commentTime.format("DD MMM, YYYY")}
+                  </Text>
+                </TouchableOpacity>
+                <View
+                  width={"100%"}
+                  justifyContent="center"
+                  alignContent="center"
+                  alignItems="center"
+                  marginVertical={3}
+                >
+                  <View
+                    backgroundColor={"black"}
+                    width={"98%"}
+                    height={1}
+                    opacity={0.2}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {showBody === true ? (
+                <View>
+                  <WebView
+                    injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
                   $(this).scrollTop(0);
               });"
-                  source={{
-                    html: `<html>
+                    source={{
+                      html: `<html>
               <head><meta name="viewport" content="width=device-width"></head>
               <body>${commentText}</body>
               </html>`,
-                  }}
-                  scrollEnabled={true}
-                  ref={webViewRef}
-                  onLoadEnd={() =>
-                    // @ts-ignore
-                    webViewRef.current?.injectJavaScript(webViewScript)
-                  }
-                  style={{ flex: 1, height: webviewHeight }}
-                  onMessage={(e: { nativeEvent: { data?: string } }) => {
-                    setWebviewHeight(Number(e.nativeEvent.data));
-                  }}
-                  onShouldStartLoadWithRequest={(request: { url: string }) => {
-                    if (request.url !== "about:blank") {
-                      WebBrowser.openBrowserAsync(request.url);
-                      return false;
-                    } else return true;
-                  }}
-                />
-              </View>
-            ) : (
-              <></>
-            )}
+                    }}
+                    scrollEnabled={true}
+                    ref={webViewRef}
+                    onLoadEnd={() =>
+                      // @ts-ignore
+                      webViewRef.current?.injectJavaScript(webViewScript)
+                    }
+                    style={{ flex: 1, height: webviewHeight }}
+                    onMessage={(e: { nativeEvent: { data?: string } }) => {
+                      setWebviewHeight(Number(e.nativeEvent.data));
+                    }}
+                    onShouldStartLoadWithRequest={(request: {
+                      url: string;
+                    }) => {
+                      if (request.url !== "about:blank") {
+                        WebBrowser.openBrowserAsync(request.url);
+                        return false;
+                      } else return true;
+                    }}
+                  />
+                </View>
+              ) : (
+                <></>
+              )}
 
-            {showChildren === true ? (
-              <View>
-                {/* Now for each kid we need to recursivly call and offsett */}
-                {(commentData.kids ?? []).map((d) => {
-                  const commentDataForChild = postDataMapping[
-                    currentlyViewingPost ?? -1
-                  ].commentData.find((c) => c.id === d);
-                  if (!commentDataForChild) {
-                    return <></>;
-                  }
-                  return (
-                    <View key={d}>
-                      <RecursiveComment
-                        data={commentDataForChild}
-                        depth={depth + 1}
-                      />
-                    </View>
-                  );
-                })}
-              </View>
-            ) : (
-              // If we have something to show, let the user know that
-              <View>
-                {(commentData.kids ?? []).length > 0 &&
-                showChildren === false ? (
-                  <View justifyContent="center" alignItems="center">
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowChildren(!showChildren);
-                        setShowBody(!showChildren);
-                      }}
-                    >
-                      <View
-                        backgroundColor={"white"}
-                        marginVertical={5}
-                        padding={3}
-                        borderRadius={20}
-                        style={{
-                          ...mainStyles.mainShadow,
-                        }}
-                      >
-                        <Feather
-                          name="chevron-down"
-                          size={24}
-                          color={"black"}
+              {showChildren === true ? (
+                <View>
+                  {/* Now for each kid we need to recursivly call and offsett */}
+                  {(commentData.kids ?? []).map((d) => {
+                    const commentDataForChild = postDataMapping[
+                      currentlyViewingPost ?? -1
+                    ].commentData?.find((c) => c.id === d);
+                    if (!commentDataForChild) {
+                      return <></>;
+                    }
+                    return (
+                      <View key={d}>
+                        <RecursiveComment
+                          data={commentDataForChild}
+                          depth={depth + 1}
                         />
                       </View>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <></>
-                )}
-              </View>
-            )}
+                    );
+                  })}
+                </View>
+              ) : (
+                // If we have something to show, let the user know that
+                <View>
+                  {(commentData.kids ?? []).length > 0 &&
+                  showChildren === false ? (
+                    <View justifyContent="center" alignItems="center">
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowChildren(!showChildren);
+                          setShowBody(!showChildren);
+                        }}
+                      >
+                        <View
+                          backgroundColor={"white"}
+                          marginVertical={5}
+                          padding={3}
+                          borderRadius={20}
+                          style={{
+                            ...mainStyles.mainShadow,
+                          }}
+                        >
+                          <Feather
+                            name="chevron-down"
+                            size={24}
+                            color={"black"}
+                          />
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <></>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
-        </View>
+        </BlinkInWrapper>
       )}
     </View>
   );

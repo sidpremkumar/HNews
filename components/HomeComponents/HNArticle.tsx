@@ -20,6 +20,7 @@ import { router } from "expo-router";
 import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
 import { ReduxStoreInterface } from "../../Redux/store";
 import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
+import BlinkInWrapper from "../BlinkInWrapper";
 
 const HNArticleRoot: React.FC<{
   postId: number;
@@ -35,6 +36,21 @@ const HNArticleRoot: React.FC<{
     Promise.resolve().then(async () => {
       if (postDataMapping[postId] === undefined) {
         const res = await HackerNewsClient.getStoryDetails(postId);
+        /**
+         * Set this first, then we can pull all comments async
+         * while the user scrolls
+         */
+        dispatch(
+          setStoryResponseRaw({
+            storyData: res,
+            commentData: undefined,
+            postId,
+          })
+        );
+
+        /**
+         * Pull all comments
+         */
         const allComments = await HackerNewsClient.getAllComments(
           res?.kids ?? []
         );
@@ -72,7 +88,7 @@ const HNArticleRoot: React.FC<{
 
 const HNArticle: React.FC<{
   storyData: GetStoryResponseRaw;
-  commentData: GetCommentResponseRaw[];
+  commentData?: GetCommentResponseRaw[];
   postNumber: number;
 }> = ({ storyData, commentData, postNumber }) => {
   const urlDomain = new URL(storyData.url).hostname;
@@ -91,86 +107,92 @@ const HNArticle: React.FC<{
   }, []);
 
   return (
-    <View
-      marginVertical={5}
-      style={{
-        ...mainStyles.mainShadow,
-        backgroundColor: "white",
-        padding: 10,
-        borderRadius: 10,
-      }}
-    >
-      <TouchableOpacity
-        onPress={() => {
-          dispatch(setCurrentlyViewingPost({ newState: storyData.id }));
-          router.push("/post");
+    <BlinkInWrapper>
+      <View
+        marginVertical={5}
+        style={{
+          ...mainStyles.mainShadow,
+          backgroundColor: "white",
+          padding: 10,
+          borderRadius: 10,
         }}
       >
-        <View flexDirection="row">
-          <Text fontSize={"$3"} color={mainPurple}>
-            {urlDomain}
-          </Text>
-          <Text fontSize={"$3"}>
-            {" "}
-            - {dayjs(storyData.time * 1000).format("MMM DD, YYYY")}
-          </Text>
-        </View>
+        <TouchableOpacity
+          onPress={() => {
+            dispatch(setCurrentlyViewingPost({ newState: storyData.id }));
+            router.push("/post");
+          }}
+        >
+          <View flexDirection="row">
+            <Text fontSize={"$3"} color={mainPurple}>
+              {urlDomain}
+            </Text>
+            <Text fontSize={"$3"}>
+              {" "}
+              - {dayjs(storyData.time * 1000).format("MMM DD, YYYY")}
+            </Text>
+          </View>
 
-        <View flexDirection="row">
-          <View width={imageURL === undefined ? "100%" : "75%"}>
-            <View marginTop={5}>
-              <Text fontSize={"$5"}>
-                {emoji}
-                {storyData.title}
-              </Text>
+          <View flexDirection="row">
+            <View width={imageURL === undefined ? "100%" : "75%"}>
+              <View marginTop={5}>
+                <Text fontSize={"$5"}>
+                  {emoji}
+                  {storyData.title}
+                </Text>
 
-              <TouchableOpacity
-                onPress={() => {
-                  dispatch(
-                    setCurrentlyViewingUser({
-                      newState: storyData.by,
-                    })
-                  );
-                  router.push("/user");
-                }}
-              >
                 <View paddingTop={8} flexDirection="row">
-                  <Text fontSize={"$3"}>
-                    by {storyData.by.replace(" ", "")}
-                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      dispatch(
+                        setCurrentlyViewingUser({
+                          newState: storyData.by,
+                        })
+                      );
+                      router.push("/user");
+                    }}
+                  >
+                    <Text fontSize={"$3"}>
+                      by {storyData.by.replace(" ", "")}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-              <View paddingTop={5} flexDirection="row">
-                <Text fontSize={"$3"}>
-                  {nFormatter(storyData.score)} points
-                </Text>
-                <Text fontSize={"$3"} paddingLeft={5}>
-                  |{" "}
-                </Text>
-                <Text fontSize={"$3"}>
-                  {nFormatter((commentData ?? []).length)} comments
-                </Text>
+                <View paddingTop={5} flexDirection="row">
+                  <Text fontSize={"$3"}>
+                    {nFormatter(storyData.score)} points
+                  </Text>
+                  <Text fontSize={"$3"} paddingLeft={5}>
+                    |{" "}
+                  </Text>
+                  {commentData === undefined ? (
+                    <ActivityIndicator size={"small"} />
+                  ) : (
+                    <Text fontSize={"$3"}>
+                      {nFormatter((commentData ?? []).length)} comments
+                    </Text>
+                  )}
+                </View>
               </View>
             </View>
+            <View
+              width={imageURL === undefined ? "0%" : "25%"}
+              height={imageURL === undefined ? 0 : "100%"}
+            >
+              <Image
+                source={{ uri: imageURL }}
+                height={90}
+                width={windowWidth * 0.23}
+                resizeMode="cover"
+                onError={(err) => {
+                  console.log(`Error loading link preview`, err);
+                  setImageURL(undefined);
+                }}
+              />
+            </View>
           </View>
-          <View
-            width={imageURL === undefined ? "0%" : "25%"}
-            height={imageURL === undefined ? 0 : "100%"}
-          >
-            <Image
-              source={{ uri: imageURL }}
-              height={90}
-              width={windowWidth * 0.23}
-              resizeMode="cover"
-              onError={(err) => {
-                console.log(`Error loading link preview`, err);
-                setImageURL(undefined);
-              }}
-            />
-          </View>
-        </View>
-      </TouchableOpacity>
-    </View>
+        </TouchableOpacity>
+      </View>
+    </BlinkInWrapper>
   );
 };
 

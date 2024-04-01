@@ -9,7 +9,7 @@ export interface PostStateReducer {
   postDataMapping: {
     [key: number]: {
       storyData: GetStoryResponseRaw | undefined;
-      commentData: GetCommentResponseRaw[];
+      commentData: GetCommentResponseRaw[] | undefined;
     };
   };
 }
@@ -18,6 +18,7 @@ export const counterSlice = createSlice({
   initialState: {
     postDataMapping: {},
     currentlyViewingPost: undefined,
+    commentData: undefined,
   } as PostStateReducer,
   reducers: {
     setCurrentlyViewingPost: (
@@ -30,7 +31,7 @@ export const counterSlice = createSlice({
       state,
       action: PayloadAction<{
         storyData?: GetStoryResponseRaw;
-        commentData: GetCommentResponseRaw[];
+        commentData?: GetCommentResponseRaw[];
         postId: number;
       }>
     ) => {
