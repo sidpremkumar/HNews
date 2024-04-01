@@ -1,11 +1,11 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
+import { View, Text } from "tamagui";
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Open up Apdddp.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
+      <Text fontSize={"$8"}>User Settings Coming Soon 🚀</Text>
     </View>
   );
 }

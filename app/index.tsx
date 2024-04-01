@@ -9,48 +9,22 @@ import tamaguiConfig from "../tamagui.config";
 import { Stack, router } from "expo-router";
 import { useEffect } from "react";
 import { useIsNavigationReady } from "../utils/isNavigationReady";
+import RootLayout from "./_layout";
+import { useFonts } from "expo-font";
 
-export default function RootLayout() {
+export default function Index() {
+  const [loaded] = useFonts({
+    Inter: require("@tamagui/font-inter/otf/Inter-Medium.otf"),
+    InterBold: require("@tamagui/font-inter/otf/Inter-Bold.otf"),
+  });
+
+  if (loaded === false) {
+    return <></>;
+  }
+
   return (
     // <GestureHandlerRootView style={{ flex: 1 }}>
-    <_RootLayout />
+    <RootLayout />
     // </GestureHandlerRootView>
   );
 }
-
-function _RootLayout() {
-  // const windowHeight = Dimensions.get("window").height;
-  // const windowWidth = Dimensions.get("window").width;
-  const isNavigationReady = useIsNavigationReady();
-  useEffect(() => {
-    if (isNavigationReady === false) return;
-
-    console.log(`Routing to home`);
-    router.replace("/home");
-  }, [isNavigationReady]);
-
-  return (
-    <TamaguiProvider config={tamaguiConfig}>
-      {/* <TapToPayProvider> */}
-      <StatusBar barStyle="dark-content" />
-      <Stack
-        screenOptions={{
-          gestureDirection: "horizontal",
-          gestureEnabled: true,
-        }}
-      >
-        <Stack.Screen name="home" options={{ headerShown: false }} />
-      </Stack>
-      {/* </TapToPayProvider> */}
-    </TamaguiProvider>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

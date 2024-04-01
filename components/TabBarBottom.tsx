@@ -18,52 +18,50 @@ const TabBarBottom: React.FC<{
   focused: boolean;
   icon: React.JSX.Element;
 }> = ({ color, focused, icon }) => {
-  // const scaleAdjustment = useRef(
-  //   new Animated.Value(focused === true ? 1.2 : 1)
-  // ).current;
-  const [startAnimation, setStartAnimation] = useState(false);
+  const scaleAdjustment = useRef(
+    new Animated.Value(focused === true ? 1.2 : 1)
+  ).current;
+  // const [startAnimation, setStartAnimation] = useState(false);
 
-  // const totalAnimationTime = 250;
-  // async function startAnimate() {
-  //   return new Promise<void>((resolve) => {
-  //     Animated.sequence([
-  //       Animated.timing(scaleAdjustment, {
-  //         toValue: 1.1,
-  //         duration: totalAnimationTime / 2,
-  //         useNativeDriver: true,
-  //       }),
-  //       Animated.timing(scaleAdjustment, {
-  //         toValue: focused === true ? 1.2 : 1,
-  //         duration: totalAnimationTime / 2,
-  //         useNativeDriver: true,
-  //       }),
-  //     ]).start(() => {
-  //       resolve();
-  //     });
-  //   });
-  // }
+  const totalAnimationTime = 250;
+  async function startAnimate() {
+    return new Promise<void>((resolve) => {
+      Animated.sequence([
+        Animated.timing(scaleAdjustment, {
+          toValue: 1.1,
+          duration: totalAnimationTime / 2,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAdjustment, {
+          toValue: focused === true ? 1.2 : 1,
+          duration: totalAnimationTime / 2,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        resolve();
+      });
+    });
+  }
 
-  // if (focused) startAnimate();
+  if (focused) startAnimate();
 
   return (
-    <View
-      style={
-        {
-          // transform: [{ scale: scaleAdjustment }],
-        }
-      }
+    <Animated.View
+      style={{
+        transform: [{ scale: scaleAdjustment }],
+      }}
     >
       <TouchableOpacity
         onPress={async () => {
           /**
            * This doesnt work and idk why
            */
-          // startAnimate();
+          startAnimate();
         }}
       >
         {icon}
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 };
 
