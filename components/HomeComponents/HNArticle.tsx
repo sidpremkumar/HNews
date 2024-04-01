@@ -19,6 +19,7 @@ import {
 import { router } from "expo-router";
 import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
 import { ReduxStoreInterface } from "../../Redux/store";
+import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
 
 const HNArticleRoot: React.FC<{
   postId: number;
@@ -123,9 +124,22 @@ const HNArticle: React.FC<{
                 {storyData.title}
               </Text>
 
-              <View paddingTop={8} flexDirection="row">
-                <Text fontSize={"$3"}>by {storyData.by.replace(" ", "")}</Text>
-              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  dispatch(
+                    setCurrentlyViewingUser({
+                      newState: storyData.by,
+                    })
+                  );
+                  router.push("/user");
+                }}
+              >
+                <View paddingTop={8} flexDirection="row">
+                  <Text fontSize={"$3"}>
+                    by {storyData.by.replace(" ", "")}
+                  </Text>
+                </View>
+              </TouchableOpacity>
               <View paddingTop={5} flexDirection="row">
                 <Text fontSize={"$3"}>
                   {nFormatter(storyData.score)} points

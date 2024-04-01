@@ -19,3 +19,17 @@ export interface GetCommentResponseRaw {
   time: number;
   type: string;
 }
+
+export interface GetUserResponseRaw {
+  id: string;
+  created: number;
+  karma: number;
+  /**
+   * The user's optional self-description. HTML.
+   */
+  about: string;
+  /**
+   * List of the user's stories, polls and comments.
+   */
+  submitted: number[];
+}

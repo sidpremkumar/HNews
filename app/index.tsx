@@ -22,9 +22,5 @@ export default function Index() {
     return <></>;
   }
 
-  return (
-    // <GestureHandlerRootView style={{ flex: 1 }}>
-    <RootLayout />
-    // </GestureHandlerRootView>
-  );
+  return <RootLayout />;
 }

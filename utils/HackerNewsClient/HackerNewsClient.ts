@@ -111,6 +111,15 @@ class HackerNewsClient {
 
     return toReturn;
   }
+
+  /**
+   * Get info from a userId
+   */
+  async getUserInfo(userId: string): Promise<GetUserResponseRaw> {
+    const url = new URL(`user/${userId}.json?print=pretty`, this.baseURL).href;
+    const userInfo = await fetch(url).then((res) => res.json());
+    return userInfo;
+  }
 }
 
 export default new HackerNewsClient();

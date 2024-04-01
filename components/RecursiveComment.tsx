@@ -9,7 +9,16 @@ import * as WebBrowser from "expo-web-browser";
 import { mainGrey } from "../utils/main.styles";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { ReduxStoreInterface } from "../Redux/store";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { Feather } from "@expo/vector-icons";
+import { setCurrentlyViewingUser } from "../Redux/userStateReducer";
+import { router } from "expo-router";
+
+export const webViewScript = `
+(function() {
+window.ReactNativeWebView.postMessage(document.documentElement.scrollHeight);
+})()
+`;
 
 const RecursiveComment: React.FC<{
   data: GetCommentResponseRaw;
@@ -27,15 +36,13 @@ const RecursiveComment: React.FC<{
   const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
     undefined
   );
-  const [showChildren, setShowChildren] = useState(true);
+  const [showChildren, setShowChildren] = useState(false);
+  const [showBody, setShowBody] = useState(true);
+  const dispatch = useDispatch();
 
   const commentTime = dayjs((commentData?.time ?? 0) * 1000);
   const commentText = commentData?.text ?? "";
-  const webViewScript = `
-  (function() {
-  window.ReactNativeWebView.postMessage(document.documentElement.scrollHeight);
-  })()
-  `;
+
   return (
     <View marginHorizontal={10} marginVertical={10}>
       {commentData === undefined ? (
@@ -45,10 +52,35 @@ const RecursiveComment: React.FC<{
       ) : (
         <View borderLeftWidth={depth === 0 ? 0 : 5} borderLeftColor={"#fb651f"}>
           <View marginLeft={depth === 0 ? 0 : 5}>
-            <TouchableOpacity onPress={() => setShowChildren(!showChildren)}>
-              <Text color={mainGrey}>
-                {commentData.by} on {commentTime.format("DD MMM, YYYY")}
-              </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowChildren(!showChildren);
+                setShowBody(!showChildren);
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  dispatch(
+                    setCurrentlyViewingUser({
+                      newState: commentData.by ?? "",
+                    })
+                  );
+                  router.push("/user");
+                }}
+              >
+                <Text color={mainGrey}>{commentData.by}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setShowChildren(!showChildren);
+                  setShowBody(!showChildren);
+                }}
+              >
+                <Text color={mainGrey}>
+                  {commentTime.format("DD MMM, YYYY")}
+                </Text>
+              </TouchableOpacity>
               <View
                 width={"100%"}
                 justifyContent="center"
@@ -65,7 +97,7 @@ const RecursiveComment: React.FC<{
               </View>
             </TouchableOpacity>
 
-            {showChildren === true ? (
+            {showBody === true ? (
               <WebView
                 injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
                   $(this).scrollTop(0);
@@ -118,7 +150,24 @@ const RecursiveComment: React.FC<{
                 })}
               </View>
             ) : (
-              <></>
+              // If we have something to show, let the user know that
+              <View>
+                {(commentData.kids ?? []).length > 0 &&
+                showChildren === false ? (
+                  <View justifyContent="center" alignItems="center">
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowChildren(!showChildren);
+                        setShowBody(!showChildren);
+                      }}
+                    >
+                      <Feather name="chevron-down" size={24} color={"black"} />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <></>
+                )}
+              </View>
             )}
           </View>
         </View>

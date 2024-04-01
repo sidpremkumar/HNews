@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { PostStateReducer } from "../../Redux/postStateReducer";
-import StoryView from "./StoryView";
+import MainPostView from "./MainPostView";
 
 export default function PostLayout() {
   const postDataMapping = useSelector(
@@ -19,7 +19,7 @@ export default function PostLayout() {
   }, []);
 
   if (currentlyViewingPost && postDataMapping[currentlyViewingPost]) {
-    return <StoryView />;
+    return <MainPostView />;
   } else {
     <></>;
   }

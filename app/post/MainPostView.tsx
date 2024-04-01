@@ -1,9 +1,9 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Button, View, Text, Image, ScrollView } from "tamagui";
 import { PostStateReducer } from "../../Redux/postStateReducer";
 import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
-import { mainPurple, mainStyles } from "../../utils/main.styles";
+import { mainGrey, mainPurple, mainStyles } from "../../utils/main.styles";
 import { Feather } from "@expo/vector-icons";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import domainToEmoji from "../../utils/domainToEmoji";
@@ -12,8 +12,10 @@ import * as WebBrowser from "expo-web-browser";
 import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
 import { Dimensions } from "react-native";
 import CommentsView from "./CommentsView";
+import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
 
-const StoryView: React.FC<{}> = () => {
+const MainPostView: React.FC<{}> = () => {
+  const dispatch = useDispatch();
   const postDataMapping = useSelector(
     (state: { postState: PostStateReducer }) => state.postState.postDataMapping
   );
@@ -98,7 +100,7 @@ const StoryView: React.FC<{}> = () => {
         <CommentsView
           commentData={postMetadata?.commentData ?? []}
           headerComponent={
-            // {/* This is our main post content */}
+            // This is our main post content
             <View
               marginTop={100}
               marginBottom={10}
@@ -151,11 +153,29 @@ const StoryView: React.FC<{}> = () => {
 
                 {/* Show info on the post itself */}
                 <View flexDirection="row">
-                  <Text>{postMetadata?.storyData?.score} points</Text>
-                  <Text> • </Text>
-                  <Text>{postMetadata?.storyData?.by}</Text>
-                  <Text> • </Text>
-                  <Text>
+                  <Text color={mainGrey}>
+                    {postMetadata?.storyData?.score} points
+                  </Text>
+                  <Text color={mainGrey}> • </Text>
+                  <View zIndex={99}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        dispatch(
+                          setCurrentlyViewingUser({
+                            newState: postMetadata?.storyData?.by ?? "",
+                          })
+                        );
+                        router.push("/user");
+                      }}
+                    >
+                      <Text color={mainGrey}>
+                        {postMetadata?.storyData?.by}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text color={mainGrey}> • </Text>
+                  <Text color={mainGrey}>
                     {dayjs((postMetadata?.storyData?.time ?? 0) * 1000).format(
                       "ddd MMM DD, YYYY"
                     )}
@@ -166,8 +186,7 @@ const StoryView: React.FC<{}> = () => {
           }
         />
       </View>
-      {/* </ScrollView> */}
     </View>
   );
 };
-export default StoryView;
+export default MainPostView;

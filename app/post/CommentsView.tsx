@@ -12,9 +12,15 @@ const CommentsView: React.FC<{
     <FlatList
       ListFooterComponent={<View height={50} />}
       ListHeaderComponent={headerComponent ?? undefined}
-      maxToRenderPerBatch={2}
+      maxToRenderPerBatch={1}
       initialNumToRender={2}
-      data={commentData}
+      windowSize={1}
+      data={commentData.filter((d) => {
+        if (!d.text || !d.by) {
+          return false;
+        }
+        return true;
+      })}
       renderItem={({ item }) => {
         return (
           <View key={item.id}>

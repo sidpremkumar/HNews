@@ -2,9 +2,11 @@ import { Reducer, combineReducers, configureStore } from "@reduxjs/toolkit";
 import postStateReducer from "./postStateReducer";
 import { useDispatch } from "react-redux";
 import homeScreenReducer from "./homeScreenReducer";
+import userStateReducer from "./userStateReducer";
 
 const appReducer = combineReducers({
   postState: postStateReducer,
+  userState: userStateReducer,
   homeScreen: homeScreenReducer,
 });
 
@@ -17,7 +19,7 @@ const rootReducer = (state, action) => {
   return appReducer(state, action);
 };
 
-export type ReduxStoreInterface = typeof rootReducer;
+export type ReduxStoreInterface = ReturnType<typeof rootReducer>;
 
 const store = configureStore({
   reducer: rootReducer,
