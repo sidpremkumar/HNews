@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last revised on [DATE]
+Last revised on April 1, 2024
 
 ### The Gist
 
@@ -16,11 +16,11 @@ That's the basic idea, but you must read through the entire Privacy Policy below
 
 This document is based upon the [Automattic Privacy Policy](http://automattic.com/privacy/) and is licensed under [Creative Commons Attribution Share-Alike License 2.5](http://creativecommons.org/licenses/by-sa/2.5/). Basically, this means you can use it verbatim or edited, but you must release new versions under the same license and you have to credit Automattic somewhere (like this!). Automattic is not connected with and does not sponsor or endorse HNews or its use of the work.
 
-HNews, Inc. ("HNews") makes available services include our web sites ([URL] and [URL]), our blog, our API, and any other software, sites, and services offered by HNews in connection to any of those (taken together, the "Service"). It is HNews's policy to respect your privacy regarding any information we may collect while operating our websites.
+HNews, Inc. ("HNews") makes available services include our blog, our API, and any other software, sites, and services offered by HNews in connection to any of those (taken together, the "Service"). It is HNews's policy to respect your privacy regarding any information we may collect while operating our websites.
 
 ### Questions
 
-If you have question about this Privacy Policy, please contact us at [CONTACT EMAIL]
+If you have question about this Privacy Policy, please contact us at sid.premkumar@gmail.com
 
 ### Visitors
 
@@ -36,7 +36,7 @@ Additionally, some interactions, such as posting a comment, may ask for optional
 
 ### Aggregated Statistics
 
-HNews may collect statistics about the behavior of visitors to the Service. For instance, HNews may monitor the most popular parts of the [URL]. HNews may display this information publicly or provide it to others. However, HNews does not disclose personally-identifying information other than as described below.
+HNews may collect statistics about the behavior of visitors to the Service. HNews may display this information publicly or provide it to others. However, HNews does not disclose personally-identifying information other than as described below.
 
 ### Protection of Certain Personally-Identifying Information
 
