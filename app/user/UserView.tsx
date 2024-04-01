@@ -60,6 +60,27 @@ const UserView: React.FC<{ userId: string }> = ({ userId }) => {
         </TouchableOpacity>
       </View>
 
+      {/* This is the share button */}
+      <View
+        position="absolute"
+        style={{
+          ...mainStyles.standardTopRightButtonOffset,
+        }}
+        zIndex={99}
+      >
+        <TouchableOpacity
+          onPress={async () => {
+            await WebBrowser.openBrowserAsync(
+              `https://news.ycombinator.com/user?id=${userId}`
+            );
+          }}
+        >
+          <View marginRight={10}>
+            <Feather name="share" color={"black"} size={24} />
+          </View>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={{
           height: "100%",

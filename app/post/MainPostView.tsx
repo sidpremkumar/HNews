@@ -3,7 +3,12 @@ import { Button, View, Text, Image, ScrollView } from "tamagui";
 import { PostStateReducer } from "../../Redux/postStateReducer";
 import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
-import { mainGrey, mainPurple, mainStyles } from "../../utils/main.styles";
+import {
+  mainGrey,
+  mainPurple,
+  mainStyles,
+  spotifyBlack,
+} from "../../utils/main.styles";
 import { Feather } from "@expo/vector-icons";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import domainToEmoji from "../../utils/domainToEmoji";
@@ -121,29 +126,53 @@ const MainPostView: React.FC<{}> = () => {
               >
                 {/* Title info */}
                 <View flexDirection="row">
-                  <View width={imageURL ? "75%" : "100%"} flexDirection="row">
+                  <View width={"75%"} flexDirection="row">
                     <Text fontSize={"$8"}>
                       {emoji}
                       {postMetadata?.storyData?.title}
                     </Text>
                   </View>
-                  <View
-                    width={imageURL === undefined ? "0%" : "25%"}
-                    height={imageURL === undefined ? 0 : "100%"}
-                  >
-                    <Image
-                      source={{ uri: imageURL }}
-                      height={90}
-                      width={windowWidth * 0.23}
-                      resizeMode="cover"
-                      onError={(err) => {
-                        /**
-                         * @note removed error here since it wasn't very useful
-                         */
-                        console.log(`Error loading link preview`);
-                        setImageURL(undefined);
-                      }}
-                    />
+                  <View width={"25%"} height={"100%"}>
+                    <View
+                      height={100}
+                      width={100}
+                      borderRadius={10}
+                      overflow="hidden"
+                    >
+                      {imageURL === undefined ? (
+                        <View
+                          height={100}
+                          width={100}
+                          backgroundColor={spotifyBlack}
+                          justifyContent="center"
+                          alignItems="center"
+                          alignContent="center"
+                        >
+                          <Text fontSize={"$10"} color={"white"}>
+                            {urlDomain.replace("www", "")[0]
+                              ? urlDomain
+                                  .replace("www", "")[0]
+                                  .toLocaleUpperCase()
+                              : ""}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Image
+                          source={{ uri: imageURL }}
+                          height={100}
+                          width={windowWidth * 0.23}
+                          resizeMode="contain"
+                          resizeMethod="scale"
+                          onError={(err) => {
+                            /**
+                             * @note removed error here since it wasn't very useful
+                             */
+                            console.log(`Error loading link preview`);
+                            setImageURL(undefined);
+                          }}
+                        />
+                      )}
+                    </View>
                   </View>
                 </View>
                 {/* Show info on the URL */}

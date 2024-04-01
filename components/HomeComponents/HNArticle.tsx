@@ -6,7 +6,12 @@ import {
   GetStoryResponseRaw,
 } from "../../utils/HackerNewsClient/HackerNewsClient.types";
 import { ActivityIndicator, Dimensions } from "react-native";
-import { mainGrey, mainPurple, mainStyles } from "../../utils/main.styles";
+import {
+  mainGrey,
+  mainPurple,
+  mainStyles,
+  spotifyBlack,
+} from "../../utils/main.styles";
 import dayjs from "dayjs";
 import nFormatter from "../../utils/nFormatter";
 import domainToEmoji from "../../utils/domainToEmoji";
@@ -106,6 +111,8 @@ const HNArticle: React.FC<{
     });
   }, []);
 
+  console.log(storyData.url);
+
   return (
     <BlinkInWrapper>
       <View
@@ -134,7 +141,7 @@ const HNArticle: React.FC<{
           </View>
 
           <View flexDirection="row">
-            <View width={imageURL === undefined ? "100%" : "75%"}>
+            <View width={"75%"}>
               <View marginTop={5}>
                 <Text fontSize={"$5"}>
                   {emoji}
@@ -175,19 +182,48 @@ const HNArticle: React.FC<{
               </View>
             </View>
             <View
-              width={imageURL === undefined ? "0%" : "25%"}
-              height={imageURL === undefined ? 0 : "100%"}
+              width={"25%"}
+              height={"100%"}
+              borderRadius={10}
+              overflow="hidden"
+              style={{
+                ...mainStyles.mainShadow,
+              }}
             >
-              <Image
-                source={{ uri: imageURL }}
-                height={90}
-                width={windowWidth * 0.23}
-                resizeMode="cover"
-                onError={(err) => {
-                  console.log(`Error loading link preview`, err);
-                  setImageURL(undefined);
-                }}
-              />
+              <View
+                height={100}
+                width={100}
+                borderRadius={10}
+                overflow="hidden"
+              >
+                {imageURL === undefined ? (
+                  <View
+                    height={100}
+                    width={100}
+                    backgroundColor={spotifyBlack}
+                    justifyContent="center"
+                    alignItems="center"
+                    alignContent="center"
+                  >
+                    <Text fontSize={"$10"} color={"white"}>
+                      {urlDomain.replace("www", "")[0]
+                        ? urlDomain.replace("www", "")[0].toLocaleUpperCase()
+                        : ""}
+                    </Text>
+                  </View>
+                ) : (
+                  <Image
+                    source={{ uri: imageURL }}
+                    height={100}
+                    width={100}
+                    resizeMode="cover"
+                    onError={(err) => {
+                      console.log(`Error loading link preview`, err);
+                      setImageURL(undefined);
+                    }}
+                  />
+                )}
+              </View>
             </View>
           </View>
         </TouchableOpacity>
