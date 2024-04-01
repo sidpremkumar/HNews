@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Button, View, Text, Image, ScrollView } from "tamagui";
 import { PostStateReducer } from "../../Redux/postStateReducer";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { router } from "expo-router";
 import {
   mainGrey,
@@ -18,9 +18,14 @@ import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
 import { Dimensions } from "react-native";
 import CommentsView from "./CommentsView";
 import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
+import WebView from "react-native-webview";
 
 const MainPostView: React.FC<{}> = () => {
   const dispatch = useDispatch();
+  const webViewRef = useRef(null);
+  const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
+    undefined
+  );
   const postDataMapping = useSelector(
     (state: { postState: PostStateReducer }) => state.postState.postDataMapping
   );
@@ -126,12 +131,51 @@ const MainPostView: React.FC<{}> = () => {
               >
                 {/* Title info */}
                 <View flexDirection="row">
-                  <View width={"75%"} flexDirection="row">
+                  <View width={"75%"}>
                     <Text fontSize={"$8"}>
                       {emoji}
                       {postMetadata?.storyData?.title}
                     </Text>
+
+                    {postMetadata?.storyData?.text ? (
+                      <View>
+                        <WebView
+                          injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
+$(this).scrollTop(0);
+});"
+                          source={{
+                            html: `<html>
+<head><meta name="viewport" content="width=device-width"></head>
+<body>${postMetadata?.storyData?.text}</body>
+</html>`,
+                          }}
+                          scrollEnabled={true}
+                          ref={webViewRef}
+                          onLoadEnd={() =>
+                            // @ts-ignore
+                            webViewRef.current?.injectJavaScript(webViewScript)
+                          }
+                          style={{ flex: 1, height: webviewHeight }}
+                          onMessage={(e: {
+                            nativeEvent: { data?: string };
+                          }) => {
+                            setWebviewHeight(Number(e.nativeEvent.data));
+                          }}
+                          onShouldStartLoadWithRequest={(request: {
+                            url: string;
+                          }) => {
+                            if (request.url !== "about:blank") {
+                              WebBrowser.openBrowserAsync(request.url);
+                              return false;
+                            } else return true;
+                          }}
+                        />
+                      </View>
+                    ) : (
+                      <></>
+                    )}
                   </View>
+
                   <View width={"25%"} height={"100%"}>
                     <View
                       height={100}
@@ -149,9 +193,9 @@ const MainPostView: React.FC<{}> = () => {
                           alignContent="center"
                         >
                           <Text fontSize={"$10"} color={"white"}>
-                            {urlDomain.replace("www", "")[0]
+                            {urlDomain.replace("www.", "")[0]
                               ? urlDomain
-                                  .replace("www", "")[0]
+                                  .replace("www.", "")[0]
                                   .toLocaleUpperCase()
                               : ""}
                           </Text>
@@ -175,6 +219,7 @@ const MainPostView: React.FC<{}> = () => {
                     </View>
                   </View>
                 </View>
+
                 {/* Show info on the URL */}
                 <Text fontSize={"$3"} color={mainPurple}>
                   {urlDomain}

@@ -34,7 +34,10 @@ export async function getOpenGraphImageURL(
     }
     return undefined;
   } catch (err) {
-    console.error(`Error with regex`, err);
+    /**
+     * Bit of a noisy error. Probably means I should fix it
+     */
+    // console.error(`Error with regex`, err);
     return undefined;
   }
 }

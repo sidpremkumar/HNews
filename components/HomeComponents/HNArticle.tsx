@@ -111,8 +111,6 @@ const HNArticle: React.FC<{
     });
   }, []);
 
-  console.log(storyData.url);
-
   return (
     <BlinkInWrapper>
       <View
@@ -206,8 +204,8 @@ const HNArticle: React.FC<{
                     alignContent="center"
                   >
                     <Text fontSize={"$10"} color={"white"}>
-                      {urlDomain.replace("www", "")[0]
-                        ? urlDomain.replace("www", "")[0].toLocaleUpperCase()
+                      {urlDomain.replace("www.", "")[0]
+                        ? urlDomain.replace("www.", "")[0].toLocaleUpperCase()
                         : ""}
                     </Text>
                   </View>

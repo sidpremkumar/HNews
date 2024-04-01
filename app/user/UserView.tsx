@@ -135,33 +135,41 @@ const UserView: React.FC<{ userId: string }> = ({ userId }) => {
                 minHeight={100}
                 height={webviewHeight}
               >
-                <WebView
-                  injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
-                  $(this).scrollTop(0);
-              });"
-                  source={{
-                    html: `<html>
-              <head><meta name="viewport" content="width=device-width"></head>
-              <body>${userData.about}</body>
-              </html>`,
-                  }}
-                  scrollEnabled={true}
-                  ref={webViewRef}
-                  onLoadEnd={() =>
-                    // @ts-ignore
-                    webViewRef.current?.injectJavaScript(webViewScript)
-                  }
-                  style={{ flex: 1, height: webviewHeight }}
-                  onMessage={(e: { nativeEvent: { data?: string } }) => {
-                    setWebviewHeight(Number(e.nativeEvent.data));
-                  }}
-                  onShouldStartLoadWithRequest={(request: { url: string }) => {
-                    if (request.url !== "about:blank") {
-                      WebBrowser.openBrowserAsync(request.url);
-                      return false;
-                    } else return true;
-                  }}
-                />
+                {userData.about ? (
+                  <WebView
+                    injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
+                    $(this).scrollTop(0);
+                });"
+                    source={{
+                      html: `<html>
+                <head><meta name="viewport" content="width=device-width"></head>
+                <body>${userData.about}</body>
+                </html>`,
+                    }}
+                    scrollEnabled={true}
+                    ref={webViewRef}
+                    onLoadEnd={() =>
+                      // @ts-ignore
+                      webViewRef.current?.injectJavaScript(webViewScript)
+                    }
+                    style={{ flex: 1, height: webviewHeight }}
+                    onMessage={(e: { nativeEvent: { data?: string } }) => {
+                      setWebviewHeight(Number(e.nativeEvent.data));
+                    }}
+                    onShouldStartLoadWithRequest={(request: {
+                      url: string;
+                    }) => {
+                      if (request.url !== "about:blank") {
+                        WebBrowser.openBrowserAsync(request.url);
+                        return false;
+                      } else return true;
+                    }}
+                  />
+                ) : (
+                  <View justifyContent="center" alignItems="center">
+                    <Text>No About</Text>
+                  </View>
+                )}
               </View>
             </View>
 
