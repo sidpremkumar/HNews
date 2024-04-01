@@ -2,7 +2,7 @@
   "expo": {
     "name": "HNews",
     "slug": "HNews",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -35,6 +35,11 @@
       "eas": {
         "projectId": "15cf4545-901a-4d49-8ec7-f18f92a76818"
       }
+    },
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/15cf4545-901a-4d49-8ec7-f18f92a76818",
+      "fallbackToCacheTimeout": 60000
     }
   }
 }

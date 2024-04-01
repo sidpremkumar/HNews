@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, StatusBar, Dimensions } from "react-native";
+import { StyleSheet, StatusBar } from "react-native";
 // this provides some helpful reset styles to ensure a more consistent look
 // only import this from your web app, not native
 import "@tamagui/core/reset.css";
@@ -6,12 +6,19 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "../tamagui.config";
-import { Stack, router } from "expo-router";
-import { useEffect } from "react";
+import { SplashScreen, Stack, router } from "expo-router";
+import { useEffect, useState } from "react";
 import { useIsNavigationReady } from "../utils/isNavigationReady";
 import { Provider } from "react-redux";
 import store from "../Redux/store";
 import dayjs from "dayjs";
+import { NODE_ENV } from "../utils/consts";
+import * as Updates from "expo-updates";
+
+/**
+ * Prevent the splash screen from auto-hiding before asset loading is complete.
+ */
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   /**
@@ -19,6 +26,48 @@ export default function RootLayout() {
    */
   var relativeTime = require("dayjs/plugin/relativeTime");
   dayjs.extend(relativeTime);
+
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    Promise.resolve().then(async () => {
+      await Promise.all([
+        Promise.resolve().then(async () => {
+          if (NODE_ENV === "development") {
+            /**
+             * No updates to check
+             */
+            return false;
+          }
+          return Updates.checkForUpdateAsync().catch((err) => {
+            console.error(`Error checking for update async`, err);
+            return false;
+          });
+        }),
+      ]).then(async ([update]) => {
+        try {
+          if (update !== false && update !== true && update.isAvailable) {
+            console.log(`OTA update available, installing`);
+            await Updates.fetchUpdateAsync();
+            await Updates.reloadAsync();
+          }
+        } catch (error) {
+          // You can also add an alert() to see the error message in case of an error when fetching updates.
+          console.error(`Error fetching latest Expo update: ${error}`);
+        }
+
+        /**
+         * Dont let expo ruin everything
+         */
+        setReady(true);
+
+        /**
+         * Wait a sec to load, then the splash screen
+         */
+        await SplashScreen.hideAsync();
+      });
+    });
+  });
 
   return (
     <Provider store={store}>
