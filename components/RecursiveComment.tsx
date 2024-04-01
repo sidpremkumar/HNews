@@ -6,7 +6,7 @@ import { ActivityIndicator } from "react-native";
 import dayjs from "dayjs";
 import WebView from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
-import { mainGrey } from "../utils/main.styles";
+import { mainGrey, mainStyles } from "../utils/main.styles";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { ReduxStoreInterface } from "../Redux/store";
 import { useDispatch, useSelector } from "react-redux";
@@ -43,19 +43,31 @@ const RecursiveComment: React.FC<{
   const commentTime = dayjs((commentData?.time ?? 0) * 1000);
   const commentText = commentData?.text ?? "";
 
+  const toggleShowChildren = () => {
+    setShowChildren(!showBody);
+    setShowBody(!showBody);
+  };
+
   return (
-    <View marginHorizontal={10} marginVertical={10}>
+    <View marginHorizontal={10} marginVertical={5}>
       {commentData === undefined ? (
         <View marginVertical={20} justifyContent="center" alignItems="center">
           <ActivityIndicator />
         </View>
       ) : (
-        <View borderLeftWidth={depth === 0 ? 0 : 5} borderLeftColor={"#fb651f"}>
-          <View marginLeft={depth === 0 ? 0 : 5}>
+        <View
+          borderLeftWidth={depth === 0 ? 0 : 5}
+          borderLeftColor={"#fb651f"}
+          backgroundColor={"white"}
+          style={{
+            ...mainStyles.mainShadow,
+            borderRadius: 10,
+          }}
+        >
+          <View marginLeft={5}>
             <TouchableOpacity
               onPress={() => {
-                setShowChildren(!showChildren);
-                setShowBody(!showChildren);
+                toggleShowChildren();
               }}
             >
               <TouchableOpacity
@@ -73,8 +85,7 @@ const RecursiveComment: React.FC<{
 
               <TouchableOpacity
                 onPress={() => {
-                  setShowChildren(!showChildren);
-                  setShowBody(!showChildren);
+                  toggleShowChildren();
                 }}
               >
                 <Text color={mainGrey}>
@@ -98,33 +109,35 @@ const RecursiveComment: React.FC<{
             </TouchableOpacity>
 
             {showBody === true ? (
-              <WebView
-                injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
+              <View>
+                <WebView
+                  injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
                   $(this).scrollTop(0);
               });"
-                source={{
-                  html: `<html>
+                  source={{
+                    html: `<html>
               <head><meta name="viewport" content="width=device-width"></head>
               <body>${commentText}</body>
               </html>`,
-                }}
-                scrollEnabled={true}
-                ref={webViewRef}
-                onLoadEnd={() =>
-                  // @ts-ignore
-                  webViewRef.current?.injectJavaScript(webViewScript)
-                }
-                style={{ flex: 1, height: webviewHeight }}
-                onMessage={(e: { nativeEvent: { data?: string } }) => {
-                  setWebviewHeight(Number(e.nativeEvent.data));
-                }}
-                onShouldStartLoadWithRequest={(request: { url: string }) => {
-                  if (request.url !== "about:blank") {
-                    WebBrowser.openBrowserAsync(request.url);
-                    return false;
-                  } else return true;
-                }}
-              />
+                  }}
+                  scrollEnabled={true}
+                  ref={webViewRef}
+                  onLoadEnd={() =>
+                    // @ts-ignore
+                    webViewRef.current?.injectJavaScript(webViewScript)
+                  }
+                  style={{ flex: 1, height: webviewHeight }}
+                  onMessage={(e: { nativeEvent: { data?: string } }) => {
+                    setWebviewHeight(Number(e.nativeEvent.data));
+                  }}
+                  onShouldStartLoadWithRequest={(request: { url: string }) => {
+                    if (request.url !== "about:blank") {
+                      WebBrowser.openBrowserAsync(request.url);
+                      return false;
+                    } else return true;
+                  }}
+                />
+              </View>
             ) : (
               <></>
             )}
@@ -161,7 +174,21 @@ const RecursiveComment: React.FC<{
                         setShowBody(!showChildren);
                       }}
                     >
-                      <Feather name="chevron-down" size={24} color={"black"} />
+                      <View
+                        backgroundColor={"white"}
+                        marginVertical={5}
+                        padding={3}
+                        borderRadius={20}
+                        style={{
+                          ...mainStyles.mainShadow,
+                        }}
+                      >
+                        <Feather
+                          name="chevron-down"
+                          size={24}
+                          color={"black"}
+                        />
+                      </View>
                     </TouchableOpacity>
                   </View>
                 ) : (

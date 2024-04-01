@@ -153,7 +153,10 @@ const HNArticle: React.FC<{
               </View>
             </View>
           </View>
-          <View width={imageURL === undefined ? "0%" : "25%"}>
+          <View
+            width={imageURL === undefined ? "0%" : "25%"}
+            height={imageURL === undefined ? 0 : "100%"}
+          >
             <Image
               source={{ uri: imageURL }}
               height={90}

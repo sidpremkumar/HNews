@@ -7,10 +7,10 @@
     <key>EXUpdatesEnabled</key>
     <true/>
     <key>EXUpdatesLaunchWaitMs</key>
-    <integer>0</integer>
+    <integer>60000</integer>
     <key>EXUpdatesSDKVersion</key>
     <string>50.0.0</string>
     <key>EXUpdatesURL</key>
-    <string>https://exp.host/@sidatsparechange/HNews</string>
+    <string>https://u.expo.dev/15cf4545-901a-4d49-8ec7-f18f92a76818</string>
   </dict>
 </plist>
