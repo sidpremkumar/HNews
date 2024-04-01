@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>HNews.com</string>
+          <string>HNews.App</string>
           <string>HNews.App</string>
         </array>
       </dict>

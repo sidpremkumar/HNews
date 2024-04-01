@@ -2,7 +2,7 @@ import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { GetStoryResponseRaw } from "../utils/HackerNewsClient/HackerNewsClient.types";
 
 export interface PostStateReducer {
-  topStories?: GetStoryResponseRaw[];
+  topStories?: number[];
 }
 export const counterSlice = createSlice({
   name: "homeScreenReducer",
@@ -13,7 +13,7 @@ export const counterSlice = createSlice({
     setTopStories: (
       state,
       action: PayloadAction<{
-        newState?: GetStoryResponseRaw[];
+        newState?: number[];
       }>
     ) => {
       state.topStories = action.payload.newState;

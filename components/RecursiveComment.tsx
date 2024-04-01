@@ -6,24 +6,28 @@ import { ActivityIndicator } from "react-native";
 import dayjs from "dayjs";
 import WebView from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
+import { mainGrey } from "../utils/main.styles";
+import { TouchableOpacity } from "react-native-gesture-handler";
+import { ReduxStoreInterface } from "../Redux/store";
+import { useSelector } from "react-redux";
 
-const RecursiveComment: React.FC<{ commentId: number; depth?: number }> = ({
-  commentId,
-  depth = 0,
-}) => {
+const RecursiveComment: React.FC<{
+  data: GetCommentResponseRaw;
+  depth?: number;
+}> = ({ data, depth = 0 }) => {
+  const commentData = data;
   const webViewRef = useRef(null);
-  const [commentData, setCommentData] = useState<
-    GetCommentResponseRaw | undefined
-  >(undefined);
+  const postDataMapping = useSelector(
+    (state: ReduxStoreInterface) => state.postState.postDataMapping
+  );
+  const currentlyViewingPost = useSelector(
+    (state: ReduxStoreInterface) => state.postState.currentlyViewingPost
+  );
+
   const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
     undefined
   );
-  useEffect(() => {
-    Promise.resolve().then(async () => {
-      const data = await HackerNewsClient.getCommentDetails(commentId);
-      setCommentData(data);
-    });
-  }, []);
+  const [showChildren, setShowChildren] = useState(true);
 
   const commentTime = dayjs((commentData?.time ?? 0) * 1000);
   const commentText = commentData?.text ?? "";
@@ -33,66 +37,89 @@ const RecursiveComment: React.FC<{ commentId: number; depth?: number }> = ({
   })()
   `;
   return (
-    <View>
+    <View marginHorizontal={10} marginVertical={10}>
       {commentData === undefined ? (
-        <View>
+        <View marginVertical={20} justifyContent="center" alignItems="center">
           <ActivityIndicator />
         </View>
       ) : (
         <View borderLeftWidth={depth === 0 ? 0 : 5} borderLeftColor={"#fb651f"}>
           <View marginLeft={depth === 0 ? 0 : 5}>
-            <Text>
-              {commentData.by} on {commentTime.format("DD MMM, YYYY")}
-            </Text>
-            <View
-              width={"100%"}
-              justifyContent="center"
-              alignContent="center"
-              alignItems="center"
-              marginVertical={3}
-            >
+            <TouchableOpacity onPress={() => setShowChildren(!showChildren)}>
+              <Text color={mainGrey}>
+                {commentData.by} on {commentTime.format("DD MMM, YYYY")}
+              </Text>
               <View
-                backgroundColor={"black"}
-                width={"98%"}
-                height={1}
-                opacity={0.2}
-              />
-            </View>
+                width={"100%"}
+                justifyContent="center"
+                alignContent="center"
+                alignItems="center"
+                marginVertical={3}
+              >
+                <View
+                  backgroundColor={"black"}
+                  width={"98%"}
+                  height={1}
+                  opacity={0.2}
+                />
+              </View>
+            </TouchableOpacity>
 
-            <WebView
-              injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight)"
-              source={{
-                html: `<html>
+            {showChildren === true ? (
+              <WebView
+                injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
+                  $(this).scrollTop(0);
+              });"
+                source={{
+                  html: `<html>
               <head><meta name="viewport" content="width=device-width"></head>
               <body>${commentText}</body>
               </html>`,
-              }}
-              scrollEnabled={true}
-              ref={webViewRef}
-              onLoadEnd={() =>
-                // @ts-ignore
-                webViewRef.current?.injectJavaScript(webViewScript)
-              }
-              style={{ flex: 1, height: webviewHeight }}
-              onMessage={(e: { nativeEvent: { data?: string } }) => {
-                setWebviewHeight(Number(e.nativeEvent.data));
-              }}
-              onShouldStartLoadWithRequest={(request: { url: string }) => {
-                if (request.url !== "about:blank") {
-                  WebBrowser.openBrowserAsync(request.url);
-                  return false;
-                } else return true;
-              }}
-            />
+                }}
+                scrollEnabled={true}
+                ref={webViewRef}
+                onLoadEnd={() =>
+                  // @ts-ignore
+                  webViewRef.current?.injectJavaScript(webViewScript)
+                }
+                style={{ flex: 1, height: webviewHeight }}
+                onMessage={(e: { nativeEvent: { data?: string } }) => {
+                  setWebviewHeight(Number(e.nativeEvent.data));
+                }}
+                onShouldStartLoadWithRequest={(request: { url: string }) => {
+                  if (request.url !== "about:blank") {
+                    WebBrowser.openBrowserAsync(request.url);
+                    return false;
+                  } else return true;
+                }}
+              />
+            ) : (
+              <></>
+            )}
 
-            {/* Now for each kid we need to recursivly call and offsett */}
-            {(commentData.kids ?? []).map((d) => {
-              return (
-                <View key={d} marginLeft={(depth + 1) * 10}>
-                  <RecursiveComment commentId={d} depth={depth + 1} />
-                </View>
-              );
-            })}
+            {showChildren === true ? (
+              <View>
+                {/* Now for each kid we need to recursivly call and offsett */}
+                {(commentData.kids ?? []).map((d) => {
+                  const commentDataForChild = postDataMapping[
+                    currentlyViewingPost ?? -1
+                  ].commentData.find((c) => c.id === d);
+                  if (!commentDataForChild) {
+                    return <></>;
+                  }
+                  return (
+                    <View key={d}>
+                      <RecursiveComment
+                        data={commentDataForChild}
+                        depth={depth + 1}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <></>
+            )}
           </View>
         </View>
       )}

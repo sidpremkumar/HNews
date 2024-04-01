@@ -9,12 +9,12 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#fb651f"
     },
-    "scheme": "HNews.com",
+    "scheme": "HNews.App",
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "HNews.App"
     },
     "android": {

@@ -1,21 +1,24 @@
 import { FlatList } from "react-native";
 import RecursiveComment from "../../components/RecursiveComment";
 import { View } from "tamagui";
+import { GetCommentResponseRaw } from "../../utils/HackerNewsClient/HackerNewsClient.types";
 
 const CommentsView: React.FC<{
-  commentIds: number[];
+  commentData: GetCommentResponseRaw[];
   headerComponent?: React.JSX.Element;
-}> = ({ commentIds, headerComponent }) => {
+}> = ({ commentData, headerComponent }) => {
   return (
     //   {/* Use a flatlist so it lazy loads since it might be a lot of comments */}
     <FlatList
       ListFooterComponent={<View height={50} />}
       ListHeaderComponent={headerComponent ?? undefined}
-      data={commentIds}
+      maxToRenderPerBatch={2}
+      initialNumToRender={2}
+      data={commentData}
       renderItem={({ item }) => {
         return (
-          <View key={item} marginHorizontal={10} marginVertical={10}>
-            <RecursiveComment commentId={item} />
+          <View key={item.id}>
+            <RecursiveComment data={item} />
           </View>
         );
       }}

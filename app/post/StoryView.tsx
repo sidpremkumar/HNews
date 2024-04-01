@@ -71,10 +71,32 @@ const StoryView: React.FC<{}> = () => {
         </TouchableOpacity>
       </View>
 
+      {/* This is the share button */}
+      <View
+        position="absolute"
+        style={{
+          ...mainStyles.standardTopRightButtonOffset,
+        }}
+        zIndex={99}
+      >
+        <TouchableOpacity
+          onPress={async () => {
+            await WebBrowser.openBrowserAsync(
+              `https://news.ycombinator.com/item?id=${currentlyViewingPost}`
+            );
+          }}
+        >
+          <Button
+            style={{ backgroundColor: "transparent" }}
+            icon={<Feather name="share" color={"black"} size={24} />}
+          ></Button>
+        </TouchableOpacity>
+      </View>
+
       {/* This is the comments */}
       <View height={windowHeight}>
         <CommentsView
-          commentIds={postMetadata?.storyData?.kids ?? []}
+          commentData={postMetadata?.commentData ?? []}
           headerComponent={
             // {/* This is our main post content */}
             <View
