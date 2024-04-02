@@ -1,14 +1,13 @@
 import { useDispatch, useSelector } from "react-redux";
-import { Button, View, Text, Image, ScrollView } from "tamagui";
-import { PostStateReducer } from "../../Redux/postStateReducer";
+import { Button, View, Text } from "tamagui";
+import {
+  PostStateReducer,
+  decreaseUpvoteNumber,
+  increaseUpvoteNumber,
+} from "../../Redux/postStateReducer";
 import React, { useEffect, useRef, useState } from "react";
 import { router } from "expo-router";
-import {
-  mainGrey,
-  mainPurple,
-  mainStyles,
-  spotifyBlack,
-} from "../../utils/main.styles";
+import { mainGrey, mainPurple, mainStyles } from "../../utils/main.styles";
 import { Feather } from "@expo/vector-icons";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import domainToEmoji from "../../utils/domainToEmoji";
@@ -22,9 +21,19 @@ import WebView from "react-native-webview";
 import { webViewScript } from "../../components/RecursiveComment";
 import RenderLinkIcon from "../../components/RenderLinkIcon";
 import getRelativeOrAbsoluteTime from "../../utils/getRelativeOrAbsoluteTime";
+import { ReduxStoreInterface } from "../../Redux/store";
+import {
+  useToast,
+  VStack,
+  ToastTitle,
+  ToastDescription,
+  Toast,
+} from "@gluestack-ui/themed";
+import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
 
 const MainPostView: React.FC<{}> = () => {
   const dispatch = useDispatch();
+  const toast = useToast();
   const webViewRef = useRef(null);
   const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
     undefined
@@ -36,12 +45,16 @@ const MainPostView: React.FC<{}> = () => {
     (state: { postState: PostStateReducer }) =>
       state.postState.currentlyViewingPost
   );
+  const isUserLoggedIn = useSelector(
+    (state: ReduxStoreInterface) => state.authUser.userLoggedIn
+  );
   const postMetadata = currentlyViewingPost
     ? postDataMapping[currentlyViewingPost]
     : undefined;
   const [imageURL, setImageURL] = useState<string | undefined>(undefined);
-  const windowWidth = Dimensions.get("window").width;
   const windowHeight = Dimensions.get("window").height;
+  const [upvoteURL, setUpvoteURL] = useState<string | undefined>(undefined);
+  const [downvoteURL, setDownvoteURL] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     Promise.resolve().then(async () => {
@@ -51,6 +64,17 @@ const MainPostView: React.FC<{}> = () => {
       if (openGraphImage) {
         setImageURL(openGraphImage);
       }
+    });
+  }, []);
+
+  useEffect(() => {
+    Promise.resolve().then(async () => {
+      const [upvoteURLPulled, downvoteURLPulled] = await Promise.all([
+        HackerNewsClient.getUpvoteUrl(`${postMetadata?.storyData?.id ?? 0}`),
+        HackerNewsClient.getDownvoteUrl(`${postMetadata?.storyData?.id ?? 0}`),
+      ]);
+      setUpvoteURL(upvoteURLPulled);
+      setDownvoteURL(downvoteURLPulled);
     });
   }, []);
 
@@ -224,6 +248,93 @@ $(this).scrollTop(0);
                       dayjs((postMetadata?.storyData?.time ?? 0) * 1000)
                     )}
                   </Text>
+
+                  <Text color={mainGrey}> • </Text>
+                  <View zIndex={99}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        if (isUserLoggedIn === false) {
+                          toast.show({
+                            placement: "top",
+                            render: ({ id }) => {
+                              const toastId = "toast-" + id;
+                              return (
+                                <Toast
+                                  nativeID={toastId}
+                                  action="attention"
+                                  variant="solid"
+                                >
+                                  <VStack space="xs">
+                                    <ToastTitle>
+                                      🚨 Please Login First
+                                    </ToastTitle>
+                                    <ToastDescription>
+                                      You must login before you can continue
+                                    </ToastDescription>
+                                  </VStack>
+                                </Toast>
+                              );
+                            },
+                          });
+                          return;
+                        }
+
+                        if (upvoteURL) {
+                          /**
+                           * Otherwise we're logged in, lets try to upvote
+                           */
+                          const response =
+                            await HackerNewsClient.makeAuthRequest(upvoteURL);
+                          if (response === true) {
+                            /**
+                             * Inrease the points
+                             */
+                            dispatch(
+                              increaseUpvoteNumber({
+                                postId: postMetadata?.storyData?.id ?? 0,
+                              })
+                            );
+
+                            setUpvoteURL(undefined);
+                            const downvoteURLPulled =
+                              await HackerNewsClient.getDownvoteUrl(
+                                `${postMetadata?.storyData?.id ?? 0}`
+                              );
+                            setDownvoteURL(downvoteURLPulled);
+                          }
+                        } else if (downvoteURL) {
+                          /**
+                           * Otherwise we're logged in, lets try to downvote
+                           */
+                          const response =
+                            await HackerNewsClient.makeAuthRequest(downvoteURL);
+                          if (response === true) {
+                            /**
+                             * Inrease the points
+                             */
+                            dispatch(
+                              decreaseUpvoteNumber({
+                                postId: postMetadata?.storyData?.id ?? 0,
+                              })
+                            );
+
+                            setDownvoteURL(undefined);
+                            const upvoteURLPulled =
+                              await HackerNewsClient.getUpvoteUrl(
+                                `${postMetadata?.storyData?.id ?? 0}`
+                              );
+
+                            console.log(`UPVOTEURL`, upvoteURLPulled);
+                            setUpvoteURL(upvoteURLPulled);
+                          }
+                        }
+                      }}
+                    >
+                      <Text color={mainGrey}>
+                        {upvoteURL !== undefined ? "upvote" : "unvote"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </TouchableOpacity>
             </View>

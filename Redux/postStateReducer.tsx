@@ -41,6 +41,30 @@ export const counterSlice = createSlice({
         );
       }
     },
+    increaseUpvoteNumber: (
+      state,
+      action: PayloadAction<{ postId: number }>
+    ) => {
+      if (
+        state.postDataMapping[action.payload.postId] !== undefined &&
+        state.postDataMapping[action.payload.postId].storyData !== undefined
+      ) {
+        // @ts-ignore
+        state.postDataMapping[action.payload.postId].storyData.score += 1;
+      }
+    },
+    decreaseUpvoteNumber: (
+      state,
+      action: PayloadAction<{ postId: number }>
+    ) => {
+      if (
+        state.postDataMapping[action.payload.postId] !== undefined &&
+        state.postDataMapping[action.payload.postId].storyData !== undefined
+      ) {
+        // @ts-ignore
+        state.postDataMapping[action.payload.postId].storyData.score -= 1;
+      }
+    },
     setStoryResponseRaw: (
       state,
       action: PayloadAction<{
@@ -64,6 +88,8 @@ export const {
   setStoryResponseRaw,
   setCurrentlyViewingPost,
   addToCommentData,
+  increaseUpvoteNumber,
+  decreaseUpvoteNumber,
 } = counterSlice.actions;
 export const {} = counterSlice.selectors;
 

@@ -6,6 +6,7 @@ import {
   GetStoryResponseRaw,
   GetUserResponseRaw,
 } from "./HackerNewsClient.types";
+import { parse } from "node-html-parser";
 
 class HackerNewsClient {
   private baseURL: string;
@@ -258,6 +259,74 @@ class HackerNewsClient {
     await Keychain.setGenericPassword(username, password);
 
     return true;
+  }
+
+  /**
+   * Get the URL needed to upvote
+   * @param  {String} itemId The item ID to upvote
+   * @return {Promise}       Returns a promise that
+   *                         resolves with the upvote URL
+   */
+  async getUpvoteUrl(itemId: string) {
+    const url = new URL(`item?id=${itemId}`, "https://news.ycombinator.com")
+      .href;
+    return fetch(url, {
+      mode: "no-cors",
+      credentials: "include",
+    })
+      .then((response) => response.text())
+      .then((responseText) => {
+        const parsedHTML = parse(responseText);
+        const foundElement = parsedHTML.querySelector(`#up_${itemId}`);
+        if (foundElement === null) return undefined;
+        if (foundElement.getAttribute("class")?.includes("nosee")) {
+          return undefined;
+        }
+
+        return `https://news.ycombinator.com/${foundElement.getAttribute(
+          "href"
+        )}`;
+      });
+  }
+
+  /**
+   * Get the URL needed to upvote
+   * @param  {String} itemId The item ID to upvote
+   * @return {Promise}       Returns a promise that
+   *                         resolves with the upvote URL
+   */
+  async getDownvoteUrl(itemId: string) {
+    const url = new URL(`item?id=${itemId}`, "https://news.ycombinator.com")
+      .href;
+    return fetch(url, {
+      mode: "no-cors",
+      credentials: "include",
+    })
+      .then((response) => response.text())
+      .then((responseText) => {
+        const parsedHTML = parse(responseText);
+        const foundElement = parsedHTML.querySelector(`#un_${itemId}`);
+        if (foundElement === null) return undefined;
+        if (foundElement.getAttribute("class")?.includes("nosee")) {
+          return undefined;
+        }
+
+        return `https://news.ycombinator.com/${foundElement.getAttribute(
+          "href"
+        )}`;
+      });
+  }
+
+  /**
+   * Given a URL, make a request.
+   * @see getUpvoteUrl
+   */
+  async makeAuthRequest(url: string) {
+    const response = await fetch(url, {
+      credentials: "include",
+    });
+    if (response.status === 200) return true;
+    return false;
   }
 }
 
