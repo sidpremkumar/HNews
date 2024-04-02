@@ -16,9 +16,46 @@ class HackerNewsClient {
   /**
    * Gets top stories
    */
-  getTopStories(): Promise<number[]> {
+  async getTopStories(): Promise<number[]> {
     const url = new URL("topstories.json?print=pretty", this.baseURL).href;
-    return fetch(url).then((res) => res.json());
+    const res = await fetch(url);
+    return await res.json();
+  }
+
+  /**
+   * Get new stories
+   */
+  async getNewStories(): Promise<number[]> {
+    const url = new URL("newstories.json?print=pretty", this.baseURL).href;
+    const res = await fetch(url);
+    return await res.json();
+  }
+
+  /**
+   * Get best stories
+   */
+  async getBestStories(): Promise<number[]> {
+    const url = new URL("beststories.json?print=pretty", this.baseURL).href;
+    const res = await fetch(url);
+    return await res.json();
+  }
+
+  /**
+   * Get all Ask HN stories
+   */
+  async getAskHNStories(): Promise<number[]> {
+    const url = new URL("askstories.json?print=pretty", this.baseURL).href;
+    const res = await fetch(url);
+    return await res.json();
+  }
+
+  /**
+   * Get all Show HN stories
+   */
+  async getShowHNStories(): Promise<number[]> {
+    const url = new URL("showstories.json?print=pretty", this.baseURL).href;
+    const res = await fetch(url);
+    return await res.json();
   }
 
   /**
@@ -68,7 +105,7 @@ class HackerNewsClient {
    */
   async getAllComments(
     initalCommentIds: number[]
-  ): Promise<GetCommentResponseRaw[]> {
+  ): Promise<{ allComments: GetCommentResponseRaw[]; moreComments: boolean }> {
     let queue: number[] = [];
     /**
      * Push all current kids on the queue
@@ -106,13 +143,17 @@ class HackerNewsClient {
         ) as GetCommentResponseRaw[];
         toReturn.push(...nonUndefined);
         queue = newQueue;
+
+        if (toReturn.length > 100) {
+          return { allComments: toReturn, moreComments: true };
+        }
       } catch (err) {
         console.error(`Bad error getting all comments`, err);
-        return toReturn;
+        return { allComments: toReturn, moreComments: false };
       }
     }
 
-    return toReturn;
+    return { allComments: toReturn, moreComments: false };
   }
 
   /**

@@ -60,7 +60,9 @@ const MainPostView: React.FC<{}> = () => {
     }
   }, []);
 
-  const urlDomain = new URL(postMetadata?.storyData?.url ?? "").hostname;
+  const urlDomain = new URL(
+    postMetadata?.storyData?.url ?? `https://${postMetadata?.storyData?.by}.com`
+  ).hostname;
   const emoji = `${domainToEmoji(urlDomain)}`;
   return (
     <View backgroundColor={"white"} height={windowHeight}>
@@ -111,7 +113,8 @@ const MainPostView: React.FC<{}> = () => {
       {/* This is the comments */}
       <View height={windowHeight}>
         <CommentsView
-          commentData={postMetadata?.commentData ?? []}
+          postId={postMetadata?.storyData?.id ?? 0}
+          initalKids={postMetadata?.storyData?.kids ?? []}
           headerComponent={
             // This is our main post content
             <View

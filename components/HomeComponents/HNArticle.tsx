@@ -58,14 +58,14 @@ const HNArticleRoot: React.FC<{
         /**
          * Pull all comments
          */
-        const allComments = await HackerNewsClient.getAllComments(
-          res?.kids ?? []
-        );
+        const { allComments, moreComments } =
+          await HackerNewsClient.getAllComments(res?.kids ?? []);
         dispatch(
           setStoryResponseRaw({
             storyData: res,
             commentData: allComments,
             postId,
+            moreComments: moreComments,
           })
         );
       }
@@ -80,7 +80,7 @@ const HNArticleRoot: React.FC<{
     );
   }
 
-  if (!postData?.storyData?.url) {
+  if (!postData?.storyData) {
     return <></>;
   }
 
@@ -88,6 +88,7 @@ const HNArticleRoot: React.FC<{
     <HNArticle
       storyData={postData.storyData}
       commentData={postData.commentData}
+      moreComments={postData.moreComments}
       postNumber={postNumber}
     />
   );
@@ -96,9 +97,11 @@ const HNArticleRoot: React.FC<{
 const HNArticle: React.FC<{
   storyData: GetStoryResponseRaw;
   commentData?: GetCommentResponseRaw[];
+  moreComments?: boolean;
   postNumber: number;
-}> = ({ storyData, commentData, postNumber }) => {
-  const urlDomain = new URL(storyData.url).hostname;
+}> = ({ storyData, commentData, moreComments, postNumber }) => {
+  const urlDomain = new URL(storyData.url ?? `https://${storyData.by}.com`)
+    .hostname;
   const dispatch = useDispatch();
   const emoji = `${domainToEmoji(urlDomain)}`;
   const [imageURL, setImageURL] = useState<string | undefined>(undefined);
@@ -129,7 +132,7 @@ const HNArticle: React.FC<{
             router.push("/post");
           }}
         >
-          <View flexDirection="row">
+          <View flexDirection="row" marginBottom={2}>
             <Text fontSize={"$3"} color={mainPurple}>
               {urlDomain}
             </Text>
@@ -174,7 +177,8 @@ const HNArticle: React.FC<{
                     <ActivityIndicator size={"small"} />
                   ) : (
                     <Text fontSize={"$3"}>
-                      {nFormatter((commentData ?? []).length)} comments
+                      {nFormatter((commentData ?? []).length)}
+                      {moreComments === true ? "+" : ""} comments
                     </Text>
                   )}
                 </View>

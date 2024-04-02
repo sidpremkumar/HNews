@@ -34,6 +34,7 @@ export default function domainToEmoji(urlDomain: string) {
       emoji = "🖥️ ";
       break;
     }
+    case "cnn.com":
     case "archive.nytimes.com":
     case "japantimes.co.jp":
     case "npr.org":

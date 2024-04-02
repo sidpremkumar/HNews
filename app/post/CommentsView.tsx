@@ -1,12 +1,12 @@
 import { FlatList } from "react-native";
-import RecursiveComment from "../../components/RecursiveComment";
 import { View } from "tamagui";
-import { GetCommentResponseRaw } from "../../utils/HackerNewsClient/HackerNewsClient.types";
+import CommentViewEntry from "./CommentViewEntry";
 
 const CommentsView: React.FC<{
-  commentData: GetCommentResponseRaw[];
+  initalKids: number[];
+  postId: number;
   headerComponent?: React.JSX.Element;
-}> = ({ commentData, headerComponent }) => {
+}> = ({ headerComponent, initalKids, postId }) => {
   return (
     //   {/* Use a flatlist so it lazy loads since it might be a lot of comments */}
     <FlatList
@@ -15,16 +15,11 @@ const CommentsView: React.FC<{
       maxToRenderPerBatch={1}
       initialNumToRender={2}
       windowSize={1}
-      data={commentData.filter((d) => {
-        if (!d.text || !d.by) {
-          return false;
-        }
-        return true;
-      })}
+      data={initalKids}
       renderItem={({ item }) => {
         return (
-          <View key={item.id}>
-            <RecursiveComment data={item} />
+          <View key={item}>
+            <CommentViewEntry commentId={item} postId={postId} />
           </View>
         );
       }}

@@ -15,6 +15,7 @@ import { setCurrentlyViewingUser } from "../Redux/userStateReducer";
 import { router } from "expo-router";
 import BlinkInWrapper from "./BlinkInWrapper";
 import getRelativeOrAbsoluteTime from "../utils/getRelativeOrAbsoluteTime";
+import { addToCommentData } from "../Redux/postStateReducer";
 
 export const webViewScript = `
 (function() {
@@ -23,10 +24,15 @@ window.ReactNativeWebView.postMessage(document.documentElement.scrollHeight);
 `;
 
 const RecursiveComment: React.FC<{
-  data: GetCommentResponseRaw;
+  commentId: number;
+  postId: number;
   depth?: number;
-}> = ({ data, depth = 0 }) => {
-  const commentData = data;
+}> = ({ commentId, postId, depth = 0 }) => {
+  const commentData = useSelector((state: ReduxStoreInterface) =>
+    state.postState.postDataMapping[postId].commentData?.find(
+      (c) => c.id === commentId
+    )
+  );
   const webViewRef = useRef(null);
   const postDataMapping = useSelector(
     (state: ReduxStoreInterface) => state.postState.postDataMapping
@@ -41,6 +47,22 @@ const RecursiveComment: React.FC<{
   const [showChildren, setShowChildren] = useState(false);
   const [showBody, setShowBody] = useState(true);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    Promise.resolve().then(async () => {
+      if (commentData === undefined) {
+        /**
+         * We need to query for this comment
+         */
+        const commentDataPulled = await HackerNewsClient.getCommentDetails(
+          commentId
+        );
+        dispatch(
+          addToCommentData({ postId: postId, commentData: commentDataPulled })
+        );
+      }
+    });
+  }, []);
 
   const commentTime = dayjs((commentData?.time ?? 0) * 1000);
   const commentText = commentData?.text ?? "";
@@ -86,11 +108,14 @@ const RecursiveComment: React.FC<{
                       router.push("/user");
                     }}
                   >
-                    <Text color={mainGrey}>{commentData.by}</Text>
+                    <View flexDirection="row">
+                      <Text color={mainGrey}>{commentData.by}</Text>
+                      <Text color={mainGrey}> • </Text>
+                      <Text color={mainGrey}>{commentTimeText}</Text>
+                    </View>
                   </TouchableOpacity>
                 </View>
 
-                <Text color={mainGrey}>{commentTimeText}</Text>
                 <View
                   width={"100%"}
                   justifyContent="center"
@@ -147,16 +172,11 @@ const RecursiveComment: React.FC<{
                 <View>
                   {/* Now for each kid we need to recursivly call and offsett */}
                   {(commentData.kids ?? []).map((d) => {
-                    const commentDataForChild = postDataMapping[
-                      currentlyViewingPost ?? -1
-                    ].commentData?.find((c) => c.id === d);
-                    if (!commentDataForChild) {
-                      return <></>;
-                    }
                     return (
                       <View key={d}>
                         <RecursiveComment
-                          data={commentDataForChild}
+                          commentId={d}
+                          postId={postId}
                           depth={depth + 1}
                         />
                       </View>

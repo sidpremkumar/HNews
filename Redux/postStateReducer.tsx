@@ -10,6 +10,7 @@ export interface PostStateReducer {
     [key: number]: {
       storyData: GetStoryResponseRaw | undefined;
       commentData: GetCommentResponseRaw[] | undefined;
+      moreComments?: boolean;
     };
   };
 }
@@ -27,25 +28,43 @@ export const counterSlice = createSlice({
     ) => {
       state.currentlyViewingPost = action.payload.newState;
     },
+    addToCommentData: (
+      state,
+      action: PayloadAction<{
+        postId: number;
+        commentData: GetCommentResponseRaw;
+      }>
+    ) => {
+      if (state.postDataMapping[action.payload.postId] !== undefined) {
+        state.postDataMapping[action.payload.postId].commentData?.push(
+          action.payload.commentData
+        );
+      }
+    },
     setStoryResponseRaw: (
       state,
       action: PayloadAction<{
         storyData?: GetStoryResponseRaw;
         commentData?: GetCommentResponseRaw[];
+        moreComments?: boolean;
         postId: number;
       }>
     ) => {
       state.postDataMapping[action.payload.postId] = {
         storyData: action.payload.storyData,
         commentData: action.payload.commentData,
+        moreComments: action.payload.moreComments,
       };
     },
   },
   selectors: {},
 });
 
-export const { setStoryResponseRaw, setCurrentlyViewingPost } =
-  counterSlice.actions;
+export const {
+  setStoryResponseRaw,
+  setCurrentlyViewingPost,
+  addToCommentData,
+} = counterSlice.actions;
 export const {} = counterSlice.selectors;
 
 export default counterSlice.reducer;

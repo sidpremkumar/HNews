@@ -38,7 +38,11 @@ const RenderLinkIcon: React.FC<{
           width={imageWidth}
           resizeMode="cover"
           onError={(err) => {
-            console.log(`Error loading link preview`, err);
+            /**
+             * Didn't log the error here since its large af
+             * and this doesn't really matter
+             */
+            // console.log(`Error loading link preview`);
             setImageURL(undefined);
           }}
         />
