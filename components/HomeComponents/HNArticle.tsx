@@ -86,6 +86,9 @@ const HNArticle: React.FC<{
   const extractChildren = (
     children: AlgoliaGetPostRaw["children"]
   ): AlgoliaCommentRaw[] => {
+    if (!children) {
+      return [];
+    }
     const allChildren = children.map((c) => {
       return [c, ...extractChildren(c.children)];
     });
@@ -149,18 +152,18 @@ const HNArticle: React.FC<{
                     }}
                   >
                     <Text fontSize={"$3"}>
-                      by {storyData.author.replace(" ", "")}
+                      by {storyData.author?.replace(" ", "")}
                     </Text>
                   </TouchableOpacity>
                 </View>
                 <View paddingTop={5} flexDirection="row">
-                  <Text fontSize={"$3"}>
+                  <Text color={mainGrey} fontSize={"$3"}>
                     {nFormatter(storyData.points)} points
                   </Text>
-                  <Text fontSize={"$3"} paddingLeft={5}>
-                    |{" "}
+                  <Text color={mainGrey} fontSize={"$3"} paddingLeft={5}>
+                    •{" "}
                   </Text>
-                  <Text fontSize={"$3"}>
+                  <Text color={mainGrey} fontSize={"$3"}>
                     {nFormatter((allComments ?? []).length)} comments
                   </Text>
                 </View>

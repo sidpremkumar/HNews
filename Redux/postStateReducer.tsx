@@ -1,9 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import {
-  AlgoliaGetPostRaw,
-  GetCommentResponseRaw,
-  GetStoryResponseRaw,
-} from "../utils/HackerNewsClient/HackerNewsClient.types";
+import { AlgoliaGetPostRaw } from "../utils/HackerNewsClient/HackerNewsClient.types";
 
 export interface PostStateReducer {
   currentlyViewingPost: number | undefined;

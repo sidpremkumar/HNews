@@ -14,6 +14,14 @@ export default function domainToEmoji(urlDomain: string) {
 
   let emoji = "";
   switch (urlDomain.replaceAll("www.", "")) {
+    case "en.wikipedia.org": {
+      emoji = "📚 ";
+      break;
+    }
+    case "whoishiring.com": {
+      emoji = "🧑‍🔧 ";
+      break;
+    }
     case "boredzo.org":
     case "fabiensanglard.net":
     case "fsturmat.net":
@@ -22,6 +30,7 @@ export default function domainToEmoji(urlDomain: string) {
       emoji = "👨‍💻 ";
       break;
     }
+    case "sciencealert.com":
     case "phys.org":
     case "acs.org":
     case "pubs.acs.org":

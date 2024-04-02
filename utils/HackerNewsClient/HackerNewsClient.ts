@@ -183,41 +183,42 @@ class HackerNewsClient {
   }
 
   /**
-   * Get the URL needed to upvote
-   * @param  {String} itemId The item ID to upvote
-   * @return {Promise}       Returns a promise that
-   *                         resolves with the upvote URL
+   * Get the URL needed to upvote from a parsed HTML
    */
-  async getUpvoteUrl(itemId: string) {
-    const url = new URL(`item?id=${itemId}`, "https://news.ycombinator.com")
-      .href;
-    return fetch(url, {
-      mode: "no-cors",
-      credentials: "include",
-    })
-      .then((response) => response.text())
-      .then((responseText) => {
-        const parsedHTML = parse(responseText);
-        const foundElement = parsedHTML.querySelector(`#up_${itemId}`);
-        if (foundElement === null) return undefined;
-        if (foundElement.getAttribute("class")?.includes("nosee")) {
-          return undefined;
-        }
+  async getUpvoteUrl(
+    itemId: string,
+    parsedHTML: Awaited<ReturnType<typeof this.getParsedHTML>>
+  ) {
+    const foundElement = parsedHTML.querySelector(`#up_${itemId}`);
+    if (foundElement === null) return undefined;
+    if (foundElement.getAttribute("class")?.includes("nosee")) {
+      return undefined;
+    }
 
-        return `https://news.ycombinator.com/${foundElement.getAttribute(
-          "href"
-        )}`;
-      });
+    return `https://news.ycombinator.com/${foundElement.getAttribute("href")}`;
   }
 
   /**
-   * Get the URL needed to upvote
-   * @param  {String} itemId The item ID to upvote
-   * @return {Promise}       Returns a promise that
-   *                         resolves with the upvote URL
+   * Get the URL needed to upvote from a parsed html
    */
-  async getDownvoteUrl(itemId: string) {
-    const url = new URL(`item?id=${itemId}`, "https://news.ycombinator.com")
+  async getDownvoteUrl(
+    itemId: string,
+    parsedHTML: Awaited<ReturnType<typeof this.getParsedHTML>>
+  ) {
+    const foundElement = parsedHTML.querySelector(`#un_${itemId}`);
+    if (foundElement === null) return undefined;
+    if (foundElement.getAttribute("class")?.includes("nosee")) {
+      return undefined;
+    }
+
+    return `https://news.ycombinator.com/${foundElement.getAttribute("href")}`;
+  }
+
+  /**
+   * Get a parsed html of a post
+   */
+  async getParsedHTML(postId: number) {
+    const url = new URL(`item?id=${postId}`, "https://news.ycombinator.com")
       .href;
     return fetch(url, {
       mode: "no-cors",
@@ -225,16 +226,8 @@ class HackerNewsClient {
     })
       .then((response) => response.text())
       .then((responseText) => {
-        const parsedHTML = parse(responseText);
-        const foundElement = parsedHTML.querySelector(`#un_${itemId}`);
-        if (foundElement === null) return undefined;
-        if (foundElement.getAttribute("class")?.includes("nosee")) {
-          return undefined;
-        }
-
-        return `https://news.ycombinator.com/${foundElement.getAttribute(
-          "href"
-        )}`;
+        const parsedHTML = parse(responseText, { parseNoneClosedTags: true });
+        return parsedHTML;
       });
   }
 

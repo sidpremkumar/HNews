@@ -14,7 +14,7 @@ import domainToEmoji from "../../utils/domainToEmoji";
 import dayjs from "dayjs";
 import * as WebBrowser from "expo-web-browser";
 import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
-import { Dimensions } from "react-native";
+import { ActivityIndicator, Dimensions } from "react-native";
 import CommentsView from "./CommentsView";
 import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
 import WebView from "react-native-webview";
@@ -30,6 +30,7 @@ import {
   Toast,
 } from "@gluestack-ui/themed";
 import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
+import HTMLElement from "node-html-parser";
 
 const MainPostView: React.FC<{}> = () => {
   const dispatch = useDispatch();
@@ -53,6 +54,9 @@ const MainPostView: React.FC<{}> = () => {
     : undefined;
   const [imageURL, setImageURL] = useState<string | undefined>(undefined);
   const windowHeight = Dimensions.get("window").height;
+  const [parsedElement, setParsedElement] = useState<
+    Awaited<ReturnType<typeof HackerNewsClient.getParsedHTML>> | undefined
+  >(undefined);
   const [upvoteURL, setUpvoteURL] = useState<string | undefined>(undefined);
   const [downvoteURL, setDownvoteURL] = useState<string | undefined>(undefined);
 
@@ -69,14 +73,25 @@ const MainPostView: React.FC<{}> = () => {
 
   useEffect(() => {
     Promise.resolve().then(async () => {
-      const [upvoteURLPulled, downvoteURLPulled] = await Promise.all([
-        HackerNewsClient.getUpvoteUrl(`${postMetadata?.storyData?.id ?? 0}`),
-        HackerNewsClient.getDownvoteUrl(`${postMetadata?.storyData?.id ?? 0}`),
+      setParsedElement(undefined);
+      const parsedHTML = await HackerNewsClient.getParsedHTML(
+        currentlyViewingPost ?? -1
+      );
+
+      await Promise.all([
+        HackerNewsClient.getUpvoteUrl(
+          `${postMetadata?.storyData?.id ?? 0}`,
+          parsedHTML
+        ).then((u) => setUpvoteURL(u)),
+        HackerNewsClient.getDownvoteUrl(
+          `${postMetadata?.storyData?.id ?? 0}`,
+          parsedHTML
+        ).then((d) => setDownvoteURL(d)),
       ]);
-      setUpvoteURL(upvoteURLPulled);
-      setDownvoteURL(downvoteURLPulled);
+
+      setParsedElement(parsedHTML);
     });
-  }, []);
+  }, [downvoteURL, upvoteURL]);
 
   useEffect(() => {
     if (!postMetadata?.storyData) {
@@ -112,6 +127,33 @@ const MainPostView: React.FC<{}> = () => {
           </Button>
         </TouchableOpacity>
       </View>
+
+      {/* This is the loading the page view */}
+      {parsedElement === undefined ? (
+        <View
+          position="absolute"
+          style={{
+            bottom: 40,
+            right: 40,
+          }}
+          zIndex={99}
+        >
+          <View
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            backgroundColor={"white"}
+            borderRadius={10}
+            opacity={0.8}
+          />
+          <ActivityIndicator />
+          <Text fontSize={"$1"}>Parsing HTML...</Text>
+        </View>
+      ) : (
+        <></>
+      )}
 
       {/* This is the share button */}
       <View
@@ -292,11 +334,6 @@ $(this).scrollTop(0);
                             );
 
                             setUpvoteURL(undefined);
-                            const downvoteURLPulled =
-                              await HackerNewsClient.getDownvoteUrl(
-                                `${postMetadata?.storyData?.id ?? 0}`
-                              );
-                            setDownvoteURL(downvoteURLPulled);
                           }
                         } else if (downvoteURL) {
                           const response =
@@ -309,11 +346,6 @@ $(this).scrollTop(0);
                             );
 
                             setDownvoteURL(undefined);
-                            const upvoteURLPulled =
-                              await HackerNewsClient.getUpvoteUrl(
-                                `${postMetadata?.storyData?.id ?? 0}`
-                              );
-                            setUpvoteURL(upvoteURLPulled);
                           }
                         }
                       }}
