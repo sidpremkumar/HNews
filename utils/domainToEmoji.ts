@@ -61,6 +61,8 @@ export default function domainToEmoji(urlDomain: string) {
       emoji = "📹 ";
       break;
     }
+    case "developer.mozilla.org":
+    case "bun.sh":
     case "npmjs.com":
     case "github.com": {
       emoji = "👾 ";

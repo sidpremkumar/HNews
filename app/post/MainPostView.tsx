@@ -203,7 +203,11 @@ const MainPostView: React.FC<{}> = () => {
                 }}
               >
                 <View position="absolute" right={5} top={0}>
-                  <CommentDialog />
+                  <CommentDialog
+                    originalItemContent={postMetadata?.storyData?.title ?? ""}
+                    originalItemId={postMetadata?.storyData?.id ?? 0}
+                    originalAuthor={postMetadata?.storyData?.author ?? ""}
+                  />
                 </View>
                 <TouchableOpacity
                   onPress={async () => {

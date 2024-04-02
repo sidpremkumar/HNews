@@ -9,7 +9,7 @@ import { ActivityIndicator } from "react-native";
 import dayjs from "dayjs";
 import WebView from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
-import { mainGrey, mainStyles } from "../utils/main.styles";
+import { mainGrey, mainPurple, mainStyles } from "../utils/main.styles";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { ReduxStoreInterface } from "../Redux/store";
 import { useDispatch, useSelector } from "react-redux";
@@ -29,6 +29,7 @@ import {
   increaseUpvoteNumber,
   decreaseUpvoteNumber,
 } from "../Redux/postStateReducer";
+import CommentDialog from "./PostComponents/CommentDialog";
 
 export const webViewScript = `
 (function() {
@@ -65,11 +66,32 @@ const RecursiveComment: React.FC<{
   const isUserLoggedIn = useSelector(
     (state: ReduxStoreInterface) => state.authUser.userLoggedIn
   );
+  const userName = useSelector(
+    (state: ReduxStoreInterface) => state.authUser.userName
+  );
 
   const commentTime = dayjs(commentData?.created_at);
   const commentText = commentData?.text ?? "";
 
   let commentTimeText = getRelativeOrAbsoluteTime(commentTime);
+
+  /**
+   * Check if we have an in-memory comments as well
+   */
+  const inMemoryUserComments = useSelector(
+    (state: ReduxStoreInterface) => state.authUser.inMemoryUserComments
+  );
+  const relevantComments = inMemoryUserComments[commentData.id] ?? [];
+  const newComments = relevantComments.filter((a) => {
+    const existingComment = commentData.children.find(
+      (othercomment) =>
+        othercomment.text === a.text && othercomment.author === a.author
+    );
+    if (existingComment) {
+      return false;
+    }
+    return true;
+  });
 
   useEffect(() => {
     if (!parsedElement) return;
@@ -114,6 +136,14 @@ const RecursiveComment: React.FC<{
               borderRadius: 10,
             }}
           >
+            <View position="absolute" right={5} top={0} zIndex={99}>
+              <CommentDialog
+                originalItemId={commentData.id ?? 0}
+                originalItemContent={commentText}
+                originalAuthor={commentData.author ?? ""}
+              />
+            </View>
+
             <View marginLeft={5}>
               <TouchableOpacity
                 onPress={() => {
@@ -134,11 +164,16 @@ const RecursiveComment: React.FC<{
                     <View flexDirection="row">
                       <Text
                         color={
-                          postOP === commentData.author ? "orange" : mainGrey
+                          postOP === commentData.author
+                            ? "orange"
+                            : userName === commentData.author
+                            ? mainPurple
+                            : mainGrey
                         }
                       >
                         {commentData.author}
                         {postOP === commentData.author ? " [OP]" : ""}
+                        {commentData.author === userName ? " [ME]" : ""}
                       </Text>
                       <Text color={mainGrey}> • </Text>
                       <Text color={mainGrey}>{commentTimeText}</Text>
@@ -255,26 +290,28 @@ const RecursiveComment: React.FC<{
               {showChildren === true ? (
                 <View>
                   {/* Now for each kid we need to recursivly call and offsett */}
-                  {(commentData.children ?? []).map((d) => {
-                    return (
-                      <View key={d.id}>
-                        <RecursiveComment
-                          commentData={d}
-                          postId={postId}
-                          depth={depth + 1}
-                          postOP={postOP}
-                          setRefresh={setRefresh}
-                          parsedElement={parsedElement}
-                        />
-                      </View>
-                    );
-                  })}
+                  {[...(commentData.children ?? []), ...newComments].map(
+                    (d) => {
+                      return (
+                        <View key={d.id}>
+                          <RecursiveComment
+                            commentData={d}
+                            postId={postId}
+                            depth={depth + 1}
+                            postOP={postOP}
+                            setRefresh={setRefresh}
+                            parsedElement={parsedElement}
+                          />
+                        </View>
+                      );
+                    }
+                  )}
                 </View>
               ) : (
                 // If we have something to show, let the user know that
                 <View>
-                  {(commentData.children ?? []).length > 0 &&
-                  showChildren === false ? (
+                  {[...(commentData.children ?? []), ...newComments].length >
+                    0 && showChildren === false ? (
                     <View justifyContent="center" alignItems="center">
                       <TouchableOpacity
                         onPress={() => {

@@ -242,6 +242,57 @@ class HackerNewsClient {
     if (response.status === 200) return true;
     return false;
   }
+
+  /**
+   * Write a new comment
+   */
+  async writeComment(postId: number, commentBody) {
+    /**
+     * First extract the hmac from the input
+     */
+    const url = new URL(`item?id=${postId}`, "https://news.ycombinator.com")
+      .href;
+    const response = await fetch(url, {
+      mode: "no-cors",
+      credentials: "include",
+    });
+    const responseText = await response.text();
+    const parsedHTML = parse(responseText, { parseNoneClosedTags: true });
+
+    /**
+     * Now with the parsed html, extract the hmac
+     */
+    const extractedHMAC = parsedHTML
+      .querySelector("input[name='hmac']")
+      ?.getAttribute("value");
+
+    if (!extractedHMAC) return false;
+
+    /**
+     * Now we can make our HTTP request
+     */
+    const headers = {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Access-Control-Allow-Origin": "*",
+    };
+
+    const commentURL = new URL("comment", "https://news.ycombinator.com").href;
+    const result = await fetch(commentURL, {
+      method: "POST",
+      body: new URLSearchParams({
+        parent: postId.toString(),
+        goto: `item?id=${postId}`,
+        hmac: extractedHMAC,
+        text: commentBody,
+      }).toString(),
+      credentials: "include",
+      headers: headers,
+    });
+
+    if (result.status !== 200) return false;
+
+    return true;
+  }
 }
 
 export default new HackerNewsClient();

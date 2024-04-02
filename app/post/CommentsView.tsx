@@ -3,6 +3,8 @@ import { View } from "tamagui";
 import CommentViewEntry from "./CommentViewEntry";
 import { AlgoliaCommentRaw } from "../../utils/HackerNewsClient/HackerNewsClient.types";
 import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
+import { useSelector } from "react-redux";
+import { ReduxStoreInterface } from "../../Redux/store";
 
 const CommentsView: React.FC<{
   initalKids: AlgoliaCommentRaw[];
@@ -19,6 +21,23 @@ const CommentsView: React.FC<{
   parsedElement,
   setRefresh,
 }) => {
+  /**
+   * Check if we have an in-memory comments as well
+   */
+  const inMemoryUserComments = useSelector(
+    (state: ReduxStoreInterface) => state.authUser.inMemoryUserComments
+  );
+  const relevantComments = inMemoryUserComments[postId] ?? [];
+  const newComments = relevantComments.filter((a) => {
+    const existingComment = initalKids.find(
+      (othercomment) =>
+        othercomment.text === a.text && othercomment.author === a.author
+    );
+    if (existingComment) {
+      return false;
+    }
+    return true;
+  });
   return (
     //   {/* Use a flatlist so it lazy loads since it might be a lot of comments */}
     <FlatList
@@ -27,7 +46,7 @@ const CommentsView: React.FC<{
       maxToRenderPerBatch={5}
       initialNumToRender={5}
       windowSize={1}
-      data={initalKids}
+      data={[...initalKids, ...newComments]}
       renderItem={({ item }) => {
         return (
           <View key={item.id}>

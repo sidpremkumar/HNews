@@ -1,4 +1,4 @@
-import { SimpleLineIcons } from "@expo/vector-icons";
+import { Entypo } from "@expo/vector-icons";
 import {
   Toast,
   VStack,
@@ -6,30 +6,40 @@ import {
   ToastDescription,
   useToast,
 } from "@gluestack-ui/themed";
-import { TouchableOpacity } from "react-native-gesture-handler";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Dialog,
-  View,
-  Text,
   Adapt,
   Button,
-  Fieldset,
-  Input,
-  Label,
   Sheet,
   Unspaced,
   XStack,
+  TextArea,
 } from "tamagui";
-import { setUserLoggedIn, setUserName } from "../../Redux/authUserReducer";
+import { ReduxStoreInterface } from "../../Redux/store";
 import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
-import { spotifyBlack } from "../../utils/main.styles";
+import { useState } from "react";
+import { addToInMemoryUserComment } from "../../Redux/authUserReducer";
 
-const CommentDialog: React.FC<{}> = () => {
+const CommentDialog: React.FC<{
+  originalItemId: number;
+  originalItemContent: string;
+  originalAuthor: string;
+}> = ({ originalItemId, originalItemContent, originalAuthor }) => {
   const toast = useToast();
+  const isLoggedIn = useSelector(
+    (state: ReduxStoreInterface) => state.authUser.userLoggedIn
+  );
+  const username = useSelector(
+    (state: ReduxStoreInterface) => state.authUser.userName
+  );
+  const [commentBody, setCommentBody] = useState<undefined | string>(undefined);
+  const dispatch = useDispatch();
+
   return (
     <Dialog modal>
       <Dialog.Trigger asChild>
-        <SimpleLineIcons name="options" size={15} color="black" />
+        <Entypo name="reply" size={15} color="black" />
       </Dialog.Trigger>
 
       <Adapt when="sm" platform="touch">
@@ -71,38 +81,19 @@ const CommentDialog: React.FC<{}> = () => {
           exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
           gap="$4"
         >
-          <Dialog.Title>Log In</Dialog.Title>
-          <Dialog.Description>
-            Log In to your Hacker News account.
+          <Dialog.Description size={"$3"}>
+            Reply To: {originalItemContent}
           </Dialog.Description>
 
-          <Fieldset gap="$4" horizontal>
-            <Label width={160} justifyContent="flex-end" htmlFor="name">
-              Username
-            </Label>
-            <Input
-              flex={1}
-              id="name"
-              autoCapitalize="none"
-              placeholder="very-cool-username"
-              // value={username}
-              // onChangeText={(text) => setUsername(text)}
-            />
-          </Fieldset>
-          <Fieldset gap="$4" horizontal>
-            <Label width={160} justifyContent="flex-end" htmlFor="name">
-              Password
-            </Label>
-            <Input
-              secureTextEntry={true}
-              flex={1}
-              autoCapitalize="none"
-              id="password"
-              defaultValue=""
-              // value={password}
-              // onChangeText={(text) => setPassword(text)}
-            />
-          </Fieldset>
+          <TextArea
+            size="$5"
+            borderWidth={2}
+            placeholder={`@${originalAuthor}`}
+            autoFocus={true}
+            // value={commentBody}
+            onChangeText={setCommentBody}
+          />
+
           <XStack alignSelf="flex-end" gap="$4">
             <Dialog.Close displayWhenAdapted asChild>
               <Button theme="active" aria-label="Close">
@@ -114,90 +105,127 @@ const CommentDialog: React.FC<{}> = () => {
                 theme="active"
                 aria-label="Close"
                 onPress={async () => {
-                  // if (!username || !password) {
-                  //   toast.show({
-                  //     placement: "top",
-                  //     render: ({ id }) => {
-                  //       const toastId = "toast-" + id;
-                  //       return (
-                  //         <Toast
-                  //           nativeID={toastId}
-                  //           action="attention"
-                  //           variant="solid"
-                  //         >
-                  //           <VStack space="xs">
-                  //             <ToastTitle>
-                  //               🚨 Enter username/password
-                  //             </ToastTitle>
-                  //             <ToastDescription>
-                  //               Double check you've entered a username and
-                  //               password
-                  //             </ToastDescription>
-                  //           </VStack>
-                  //         </Toast>
-                  //       );
-                  //     },
-                  //   });
-                  //   return;
-                  // }
-                  // /**
-                  //  * Validate the username and password even exist
-                  //  */
-                  // const result =
-                  //   await HackerNewsClient.validateAndSaveCredentials(
-                  //     username,
-                  //     password
-                  //   );
-                  // if (result === false) {
-                  //   toast.show({
-                  //     placement: "top",
-                  //     render: ({ id }) => {
-                  //       const toastId = "toast-" + id;
-                  //       return (
-                  //         <Toast
-                  //           nativeID={toastId}
-                  //           action="attention"
-                  //           variant="solid"
-                  //         >
-                  //           <VStack space="xs">
-                  //             <ToastTitle>🚨 Invalid Credentils</ToastTitle>
-                  //             <ToastDescription>
-                  //               Double check your username/password
-                  //             </ToastDescription>
-                  //           </VStack>
-                  //         </Toast>
-                  //       );
-                  //     },
-                  //   });
-                  //   return;
-                  // }
+                  if (!isLoggedIn) {
+                    toast.show({
+                      placement: "top",
+                      render: ({ id }) => {
+                        const toastId = "toast-" + id;
+                        return (
+                          <Toast
+                            nativeID={toastId}
+                            action="attention"
+                            variant="solid"
+                          >
+                            <VStack space="xs">
+                              <ToastTitle>
+                                🚨 Please login before attempting to comment
+                              </ToastTitle>
+                              <ToastDescription>
+                                Double check you've logged in
+                              </ToastDescription>
+                            </VStack>
+                          </Toast>
+                        );
+                      },
+                    });
+                    return;
+                  }
 
-                  // toast.show({
-                  //   placement: "top",
-                  //   render: ({ id }) => {
-                  //     const toastId = "toast-" + id;
-                  //     return (
-                  //       <Toast
-                  //         nativeID={toastId}
-                  //         action="attention"
-                  //         variant="solid"
-                  //       >
-                  //         <VStack space="xs">
-                  //           <ToastTitle>🙌 Success</ToastTitle>
-                  //         </VStack>
-                  //       </Toast>
-                  //     );
-                  //   },
-                  // });
+                  if (!commentBody) {
+                    toast.show({
+                      placement: "top",
+                      render: ({ id }) => {
+                        const toastId = "toast-" + id;
+                        return (
+                          <Toast
+                            nativeID={toastId}
+                            action="attention"
+                            variant="solid"
+                          >
+                            <VStack space="xs">
+                              <ToastTitle>
+                                🚨 Please enter a comment body first
+                              </ToastTitle>
+                            </VStack>
+                          </Toast>
+                        );
+                      },
+                    });
+                    return;
+                  }
 
-                  // /**
-                  //  * Clear input
-                  //  */
-                  // dispatch(setUserLoggedIn({ newState: true }));
-                  // dispatch(setUserName({ newState: username }));
-                  // setPassword(undefined);
-                  // setUsername(undefined);
+                  /**
+                   * Attempt to comment
+                   */
+                  const response = await HackerNewsClient.writeComment(
+                    originalItemId,
+                    commentBody
+                  );
 
+                  if (response === false) {
+                    toast.show({
+                      placement: "top",
+                      render: ({ id }) => {
+                        const toastId = "toast-" + id;
+                        return (
+                          <Toast
+                            nativeID={toastId}
+                            action="attention"
+                            variant="solid"
+                          >
+                            <VStack space="xs">
+                              <ToastTitle>🚨 Error Commenting</ToastTitle>
+                              <ToastDescription>
+                                Something went wrong 😕
+                              </ToastDescription>
+                            </VStack>
+                          </Toast>
+                        );
+                      },
+                    });
+                    return;
+                  }
+
+                  toast.show({
+                    placement: "top",
+                    render: ({ id }) => {
+                      const toastId = "toast-" + id;
+                      return (
+                        <Toast
+                          nativeID={toastId}
+                          action="attention"
+                          variant="solid"
+                        >
+                          <VStack space="xs">
+                            <ToastTitle>🙌 Success</ToastTitle>
+                          </VStack>
+                        </Toast>
+                      );
+                    },
+                  });
+
+                  /**
+                   * Save this comment, so it shows up in the post
+                   * immidietly
+                   */
+                  dispatch(
+                    addToInMemoryUserComment({
+                      itemId: originalItemId,
+                      comment: {
+                        id: -1,
+                        author: username ?? "[ME]",
+                        created_at: new Date().toISOString(),
+                        created_at_i: Math.floor(Date.now() / 1000),
+                        children: [],
+                        options: [],
+                        parent_id: originalItemId,
+                        points: 0,
+                        story_id: originalItemId,
+                        text: commentBody,
+                        type: "comment",
+                      },
+                    })
+                  );
                   return;
                 }}
               >
@@ -206,19 +234,10 @@ const CommentDialog: React.FC<{}> = () => {
             </Dialog.Close>
           </XStack>
 
-          {/* <Dialog.Description>
-            We use{" "}
-            <TouchableOpacity
-              onPress={async () => {
-                await WebBrowser.openBrowserAsync(
-                  "https://github.com/oblador/react-native-keychain?tab=readme-ov-file#setgenericpasswordusername-password--accesscontrol-accessible-accessgroup-service-securitylevel"
-                );
-              }}
-            >
-              <Text color="purple">react-native-keychain</Text>
-            </TouchableOpacity>{" "}
-            to store credentials on the device.
-          </Dialog.Description> */}
+          <Dialog.Description size={"$1"}>
+            Note: Comments can take up to 5 minutes to appear due to the Algolia
+            database being delayed.
+          </Dialog.Description>
 
           <Unspaced>
             <Dialog.Close asChild>
