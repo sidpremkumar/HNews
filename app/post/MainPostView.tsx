@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { Button, View, Text } from "tamagui";
+import { Button, View, Text, TextArea } from "tamagui";
 import {
   PostStateReducer,
   decreaseUpvoteNumber,
@@ -30,7 +30,7 @@ import {
   Toast,
 } from "@gluestack-ui/themed";
 import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
-import HTMLElement from "node-html-parser";
+import CommentDialog from "../../components/PostComponents/CommentDialog";
 
 const MainPostView: React.FC<{}> = () => {
   const dispatch = useDispatch();
@@ -59,6 +59,7 @@ const MainPostView: React.FC<{}> = () => {
   >(undefined);
   const [upvoteURL, setUpvoteURL] = useState<string | undefined>(undefined);
   const [downvoteURL, setDownvoteURL] = useState<string | undefined>(undefined);
+  const [refresh, setRefresh] = useState<boolean>(false);
 
   useEffect(() => {
     Promise.resolve().then(async () => {
@@ -90,8 +91,10 @@ const MainPostView: React.FC<{}> = () => {
       ]);
 
       setParsedElement(parsedHTML);
+
+      setRefresh(false);
     });
-  }, [downvoteURL, upvoteURL]);
+  }, [downvoteURL, upvoteURL, refresh]);
 
   useEffect(() => {
     if (!postMetadata?.storyData) {
@@ -180,187 +183,217 @@ const MainPostView: React.FC<{}> = () => {
       {/* This is the comments */}
       <View height={windowHeight}>
         <CommentsView
+          parsedElement={parsedElement}
+          setRefresh={setRefresh}
           postId={postMetadata?.storyData?.id ?? 0}
           postOP={postMetadata?.storyData?.author ?? ""}
           initalKids={postMetadata?.storyData?.children ?? []}
           headerComponent={
-            // This is our main post content
-            <View
-              marginTop={100}
-              marginBottom={10}
-              marginHorizontal={10}
-              style={{
-                backgroundColor: "white",
-                ...mainStyles.mainShadow,
-                padding: 10,
-                borderRadius: 5,
-              }}
-            >
-              <TouchableOpacity
-                onPress={async () => {
-                  await WebBrowser.openBrowserAsync(
-                    postMetadata?.storyData?.url ?? ""
-                  );
+            <View>
+              {/* // This is our main post content */}
+              <View
+                marginTop={100}
+                marginBottom={10}
+                marginHorizontal={10}
+                style={{
+                  backgroundColor: "white",
+                  ...mainStyles.mainShadow,
+                  padding: 10,
+                  borderRadius: 5,
                 }}
               >
-                {/* Title info */}
-                <View flexDirection="row">
-                  <View width={"75%"}>
-                    <Text fontSize={"$8"}>
-                      {emoji}
-                      {postMetadata?.storyData?.title}
-                    </Text>
-                  </View>
-
-                  <View width={"25%"} height={"100%"}>
-                    <RenderLinkIcon
-                      urlDomain={urlDomain}
-                      imageURL={imageURL}
-                      setImageURL={setImageURL}
-                    />
-                  </View>
+                <View position="absolute" right={5} top={0}>
+                  <CommentDialog />
                 </View>
+                <TouchableOpacity
+                  onPress={async () => {
+                    await WebBrowser.openBrowserAsync(
+                      postMetadata?.storyData?.url ?? ""
+                    );
+                  }}
+                >
+                  {/* Title info */}
+                  <View flexDirection="row">
+                    <View width={"75%"}>
+                      <Text fontSize={"$8"}>
+                        {emoji}
+                        {postMetadata?.storyData?.title}
+                      </Text>
+                    </View>
 
-                {/* text body if it exists */}
-                {postMetadata?.storyData?.text ? (
-                  <View>
-                    <WebView
-                      injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
+                    <View width={"25%"} height={"100%"} marginTop={10}>
+                      <RenderLinkIcon
+                        urlDomain={urlDomain}
+                        imageURL={imageURL}
+                        setImageURL={setImageURL}
+                      />
+                    </View>
+                  </View>
+
+                  {/* text body if it exists */}
+                  {postMetadata?.storyData?.text ? (
+                    <View>
+                      <WebView
+                        injectedJavaScript="window.ReactNativeWebView.postMessage(document.body.scrollHeight);$(document).ready(function(){
 $(this).scrollTop(0);
 });"
-                      source={{
-                        html: `<html>
+                        source={{
+                          html: `<html>
 <head><meta name="viewport" content="width=device-width"></head>
 <body>${postMetadata?.storyData?.text}</body>
 </html>`,
-                      }}
-                      scrollEnabled={true}
-                      ref={webViewRef}
-                      onLoadEnd={() =>
-                        // @ts-ignore
-                        webViewRef.current?.injectJavaScript(webViewScript)
-                      }
-                      style={{ flex: 1, height: webviewHeight }}
-                      onMessage={(e: { nativeEvent: { data?: string } }) => {
-                        setWebviewHeight(Number(e.nativeEvent.data));
-                      }}
-                      onShouldStartLoadWithRequest={(request: {
-                        url: string;
-                      }) => {
-                        if (request.url !== "about:blank") {
-                          WebBrowser.openBrowserAsync(request.url);
-                          return false;
-                        } else return true;
-                      }}
-                    />
-                  </View>
-                ) : (
-                  <></>
-                )}
+                        }}
+                        scrollEnabled={true}
+                        ref={webViewRef}
+                        onLoadEnd={() =>
+                          // @ts-ignore
+                          webViewRef.current?.injectJavaScript(webViewScript)
+                        }
+                        style={{ flex: 1, height: webviewHeight }}
+                        onMessage={(e: { nativeEvent: { data?: string } }) => {
+                          setWebviewHeight(Number(e.nativeEvent.data));
+                        }}
+                        onShouldStartLoadWithRequest={(request: {
+                          url: string;
+                        }) => {
+                          if (request.url !== "about:blank") {
+                            WebBrowser.openBrowserAsync(request.url);
+                            return false;
+                          } else return true;
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <></>
+                  )}
 
-                {/* Show info on the URL */}
-                <Text fontSize={"$3"} color={mainPurple}>
-                  {urlDomain}
-                </Text>
-
-                {/* Show info on the post itself */}
-                <View flexDirection="row">
-                  <Text color={mainGrey}>
-                    {postMetadata?.storyData?.points} points
-                  </Text>
-                  <Text color={mainGrey}> • </Text>
-                  <View zIndex={99}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        dispatch(
-                          setCurrentlyViewingUser({
-                            newState: postMetadata?.storyData?.author ?? "",
-                          })
-                        );
-                        router.push("/user");
-                      }}
-                    >
-                      <Text color={mainGrey}>
-                        {postMetadata?.storyData?.author}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <Text color={mainGrey}> • </Text>
-                  <Text color={mainGrey}>
-                    {getRelativeOrAbsoluteTime(
-                      dayjs(postMetadata?.storyData?.created_at)
-                    )}
+                  {/* Show info on the URL */}
+                  <Text fontSize={"$3"} color={mainPurple}>
+                    {urlDomain}
                   </Text>
 
-                  <Text color={mainGrey}> • </Text>
-                  <View zIndex={99}>
-                    <TouchableOpacity
-                      onPress={async () => {
-                        if (isUserLoggedIn === false) {
-                          toast.show({
-                            placement: "top",
-                            render: ({ id }) => {
-                              const toastId = "toast-" + id;
-                              return (
-                                <Toast
-                                  nativeID={toastId}
-                                  action="attention"
-                                  variant="solid"
-                                >
-                                  <VStack space="xs">
-                                    <ToastTitle>
-                                      🚨 Please Login First
-                                    </ToastTitle>
-                                    <ToastDescription>
-                                      You must login before you can continue
-                                    </ToastDescription>
-                                  </VStack>
-                                </Toast>
+                  {/* Show info on the post itself */}
+                  <View flexDirection="row">
+                    <Text color={mainGrey}>
+                      {postMetadata?.storyData?.points} points
+                    </Text>
+                    <Text color={mainGrey}> • </Text>
+                    <View zIndex={99}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          dispatch(
+                            setCurrentlyViewingUser({
+                              newState: postMetadata?.storyData?.author ?? "",
+                            })
+                          );
+                          router.push("/user");
+                        }}
+                      >
+                        <Text color={mainGrey}>
+                          {postMetadata?.storyData?.author}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <Text color={mainGrey}> • </Text>
+                    <Text color={mainGrey}>
+                      {getRelativeOrAbsoluteTime(
+                        dayjs(postMetadata?.storyData?.created_at)
+                      )}
+                    </Text>
+
+                    <Text color={mainGrey}> • </Text>
+                    <View zIndex={99}>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          if (isUserLoggedIn === false) {
+                            toast.show({
+                              placement: "top",
+                              render: ({ id }) => {
+                                const toastId = "toast-" + id;
+                                return (
+                                  <Toast
+                                    nativeID={toastId}
+                                    action="attention"
+                                    variant="solid"
+                                  >
+                                    <VStack space="xs">
+                                      <ToastTitle>
+                                        🚨 Please Login First
+                                      </ToastTitle>
+                                      <ToastDescription>
+                                        You must login before you can continue
+                                      </ToastDescription>
+                                    </VStack>
+                                  </Toast>
+                                );
+                              },
+                            });
+                            return;
+                          }
+
+                          if (upvoteURL) {
+                            const response =
+                              await HackerNewsClient.makeAuthRequest(upvoteURL);
+                            if (response === true) {
+                              dispatch(
+                                increaseUpvoteNumber({
+                                  postId: postMetadata?.storyData?.id ?? 0,
+                                })
                               );
-                            },
-                          });
-                          return;
-                        }
 
-                        if (upvoteURL) {
-                          const response =
-                            await HackerNewsClient.makeAuthRequest(upvoteURL);
-                          if (response === true) {
-                            dispatch(
-                              increaseUpvoteNumber({
-                                postId: postMetadata?.storyData?.id ?? 0,
-                              })
-                            );
+                              setUpvoteURL(undefined);
+                            }
+                          } else if (downvoteURL) {
+                            const response =
+                              await HackerNewsClient.makeAuthRequest(
+                                downvoteURL
+                              );
+                            if (response === true) {
+                              dispatch(
+                                decreaseUpvoteNumber({
+                                  postId: postMetadata?.storyData?.id ?? 0,
+                                })
+                              );
 
-                            setUpvoteURL(undefined);
+                              setDownvoteURL(undefined);
+                            }
                           }
-                        } else if (downvoteURL) {
-                          const response =
-                            await HackerNewsClient.makeAuthRequest(downvoteURL);
-                          if (response === true) {
-                            dispatch(
-                              decreaseUpvoteNumber({
-                                postId: postMetadata?.storyData?.id ?? 0,
-                              })
-                            );
-
-                            setDownvoteURL(undefined);
-                          }
-                        }
-                      }}
-                    >
-                      <Text color={mainGrey}>
-                        {upvoteURL !== undefined
-                          ? "upvote"
-                          : downvoteURL !== undefined
-                          ? "unvote"
-                          : ""}
-                      </Text>
-                    </TouchableOpacity>
+                        }}
+                      >
+                        <Text color={mainGrey}>
+                          {upvoteURL !== undefined
+                            ? "upvote"
+                            : downvoteURL !== undefined
+                            ? "unvote"
+                            : ""}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+
+              {/* <View marginHorizontal={10}>
+                <TextArea
+                  size="$4"
+                  borderWidth={2}
+                  placeholder="very cool comment"
+                />
+                <TouchableOpacity style={{}}>
+                  <View
+                    flex={1}
+                    backgroundColor={"transparent"}
+                    alignItems="flex-end"
+                  >
+                    <Text>
+                      <View backgroundColor={"transparent"}>
+                        <Text>Add Comment</Text>
+                      </View>
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View> */}
             </View>
           }
         />

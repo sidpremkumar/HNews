@@ -2,13 +2,23 @@ import { FlatList } from "react-native";
 import { View } from "tamagui";
 import CommentViewEntry from "./CommentViewEntry";
 import { AlgoliaCommentRaw } from "../../utils/HackerNewsClient/HackerNewsClient.types";
+import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
 
 const CommentsView: React.FC<{
   initalKids: AlgoliaCommentRaw[];
   postId: number;
   postOP: string;
   headerComponent?: React.JSX.Element;
-}> = ({ headerComponent, initalKids, postId, postOP }) => {
+  parsedElement?: Awaited<ReturnType<typeof HackerNewsClient.getParsedHTML>>;
+  setRefresh: (value: boolean) => void;
+}> = ({
+  headerComponent,
+  initalKids,
+  postId,
+  postOP,
+  parsedElement,
+  setRefresh,
+}) => {
   return (
     //   {/* Use a flatlist so it lazy loads since it might be a lot of comments */}
     <FlatList
@@ -22,6 +32,8 @@ const CommentsView: React.FC<{
         return (
           <View key={item.id}>
             <CommentViewEntry
+              setRefresh={setRefresh}
+              parsedElement={parsedElement}
               commentData={item}
               postId={postId}
               postOP={postOP}

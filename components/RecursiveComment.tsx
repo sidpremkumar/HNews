@@ -18,6 +18,17 @@ import { setCurrentlyViewingUser } from "../Redux/userStateReducer";
 import { router } from "expo-router";
 import BlinkInWrapper from "./BlinkInWrapper";
 import getRelativeOrAbsoluteTime from "../utils/getRelativeOrAbsoluteTime";
+import {
+  useToast,
+  VStack,
+  ToastTitle,
+  ToastDescription,
+  Toast,
+} from "@gluestack-ui/themed";
+import {
+  increaseUpvoteNumber,
+  decreaseUpvoteNumber,
+} from "../Redux/postStateReducer";
 
 export const webViewScript = `
 (function() {
@@ -30,8 +41,18 @@ const RecursiveComment: React.FC<{
   postOP: string;
   postId: number;
   depth?: number;
-}> = ({ commentData, postId, depth = 0, postOP }) => {
+  parsedElement?: Awaited<ReturnType<typeof HackerNewsClient.getParsedHTML>>;
+  setRefresh: (value: boolean) => void;
+}> = ({
+  commentData,
+  postId,
+  depth = 0,
+  postOP,
+  parsedElement,
+  setRefresh,
+}) => {
   const webViewRef = useRef(null);
+  const toast = useToast();
 
   const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
     undefined
@@ -39,11 +60,37 @@ const RecursiveComment: React.FC<{
   const [showChildren, setShowChildren] = useState(false);
   const [showBody, setShowBody] = useState(true);
   const dispatch = useDispatch();
+  const [upvoteURL, setUpvoteURL] = useState<string | undefined>(undefined);
+  const [downvoteURL, setDownvoteURL] = useState<string | undefined>(undefined);
+  const isUserLoggedIn = useSelector(
+    (state: ReduxStoreInterface) => state.authUser.userLoggedIn
+  );
 
   const commentTime = dayjs(commentData?.created_at);
   const commentText = commentData?.text ?? "";
 
   let commentTimeText = getRelativeOrAbsoluteTime(commentTime);
+
+  useEffect(() => {
+    if (!parsedElement) return;
+
+    Promise.resolve().then(async () => {
+      await Promise.all([
+        HackerNewsClient.getUpvoteUrl(
+          `${commentData.id ?? 0}`,
+          parsedElement
+        ).then((u) => {
+          setUpvoteURL(u);
+        }),
+        HackerNewsClient.getDownvoteUrl(
+          `${commentData.id ?? 0}`,
+          parsedElement
+        ).then((d) => {
+          setDownvoteURL(d);
+        }),
+      ]);
+    });
+  }, [parsedElement]);
 
   const toggleShowChildren = () => {
     setShowChildren(!showBody);
@@ -95,6 +142,60 @@ const RecursiveComment: React.FC<{
                       </Text>
                       <Text color={mainGrey}> • </Text>
                       <Text color={mainGrey}>{commentTimeText}</Text>
+                      <Text color={mainGrey}> • </Text>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          if (isUserLoggedIn === false) {
+                            toast.show({
+                              placement: "top",
+                              render: ({ id }) => {
+                                const toastId = "toast-" + id;
+                                return (
+                                  <Toast
+                                    nativeID={toastId}
+                                    action="attention"
+                                    variant="solid"
+                                  >
+                                    <VStack space="xs">
+                                      <ToastTitle>
+                                        🚨 Please Login First
+                                      </ToastTitle>
+                                      <ToastDescription>
+                                        You must login before you can continue
+                                      </ToastDescription>
+                                    </VStack>
+                                  </Toast>
+                                );
+                              },
+                            });
+                            return;
+                          }
+
+                          if (upvoteURL) {
+                            const response =
+                              await HackerNewsClient.makeAuthRequest(upvoteURL);
+                            if (response === true) {
+                              setRefresh(true);
+                            }
+                          } else if (downvoteURL) {
+                            const response =
+                              await HackerNewsClient.makeAuthRequest(
+                                downvoteURL
+                              );
+                            if (response === true) {
+                              setRefresh(true);
+                            }
+                          }
+                        }}
+                      >
+                        <Text color={mainGrey}>
+                          {upvoteURL !== undefined
+                            ? "upvote"
+                            : downvoteURL !== undefined
+                            ? "unvote"
+                            : ""}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
                 </View>
@@ -162,6 +263,8 @@ const RecursiveComment: React.FC<{
                           postId={postId}
                           depth={depth + 1}
                           postOP={postOP}
+                          setRefresh={setRefresh}
+                          parsedElement={parsedElement}
                         />
                       </View>
                     );
