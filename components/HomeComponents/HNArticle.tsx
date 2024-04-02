@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { View, Text, Image } from "tamagui";
 import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
 import {
+  AlgoliaCommentRaw,
+  AlgoliaGetPostRaw,
   GetCommentResponseRaw,
   GetStoryResponseRaw,
 } from "../../utils/HackerNewsClient/HackerNewsClient.types";
@@ -42,30 +44,14 @@ const HNArticleRoot: React.FC<{
   useEffect(() => {
     Promise.resolve().then(async () => {
       if (postDataMapping[postId] === undefined) {
-        const res = await HackerNewsClient.getStoryDetails(postId);
         /**
-         * Set this first, then we can pull all comments async
-         * while the user scrolls
+         * Get all our data from algolia
          */
+        const allData = await HackerNewsClient.getAllData(postId);
         dispatch(
           setStoryResponseRaw({
-            storyData: res,
-            commentData: undefined,
+            storyData: allData,
             postId,
-          })
-        );
-
-        /**
-         * Pull all comments
-         */
-        const { allComments, moreComments } =
-          await HackerNewsClient.getAllComments(res?.kids ?? []);
-        dispatch(
-          setStoryResponseRaw({
-            storyData: res,
-            commentData: allComments,
-            postId,
-            moreComments: moreComments,
           })
         );
       }
@@ -84,27 +70,28 @@ const HNArticleRoot: React.FC<{
     return <></>;
   }
 
-  return (
-    <HNArticle
-      storyData={postData.storyData}
-      commentData={postData.commentData}
-      moreComments={postData.moreComments}
-      postNumber={postNumber}
-    />
-  );
+  return <HNArticle storyData={postData.storyData} postNumber={postNumber} />;
 };
 
 const HNArticle: React.FC<{
-  storyData: GetStoryResponseRaw;
-  commentData?: GetCommentResponseRaw[];
-  moreComments?: boolean;
+  storyData: AlgoliaGetPostRaw;
   postNumber: number;
-}> = ({ storyData, commentData, moreComments, postNumber }) => {
-  const urlDomain = new URL(storyData.url ?? `https://${storyData.by}.com`)
+}> = ({ storyData, postNumber }) => {
+  const urlDomain = new URL(storyData.url ?? `https://${storyData.author}.com`)
     .hostname;
   const dispatch = useDispatch();
   const emoji = `${domainToEmoji(urlDomain)}`;
   const [imageURL, setImageURL] = useState<string | undefined>(undefined);
+
+  const extractChildren = (
+    children: AlgoliaGetPostRaw["children"]
+  ): AlgoliaCommentRaw[] => {
+    const allChildren = children.map((c) => {
+      return [c, ...extractChildren(c.children)];
+    });
+    return allChildren.flat();
+  };
+  const allComments = extractChildren(storyData.children);
 
   useEffect(() => {
     Promise.resolve().then(async () => {
@@ -138,7 +125,7 @@ const HNArticle: React.FC<{
             </Text>
             <Text fontSize={"$3"}>
               {" "}
-              - {getRelativeOrAbsoluteTime(dayjs(storyData.time * 1000))}
+              - {getRelativeOrAbsoluteTime(dayjs(storyData.created_at))}
             </Text>
           </View>
 
@@ -155,32 +142,27 @@ const HNArticle: React.FC<{
                     onPress={() => {
                       dispatch(
                         setCurrentlyViewingUser({
-                          newState: storyData.by,
+                          newState: storyData.author,
                         })
                       );
                       router.push("/user");
                     }}
                   >
                     <Text fontSize={"$3"}>
-                      by {storyData.by.replace(" ", "")}
+                      by {storyData.author.replace(" ", "")}
                     </Text>
                   </TouchableOpacity>
                 </View>
                 <View paddingTop={5} flexDirection="row">
                   <Text fontSize={"$3"}>
-                    {nFormatter(storyData.score)} points
+                    {nFormatter(storyData.points)} points
                   </Text>
                   <Text fontSize={"$3"} paddingLeft={5}>
                     |{" "}
                   </Text>
-                  {commentData === undefined ? (
-                    <ActivityIndicator size={"small"} />
-                  ) : (
-                    <Text fontSize={"$3"}>
-                      {nFormatter((commentData ?? []).length)}
-                      {moreComments === true ? "+" : ""} comments
-                    </Text>
-                  )}
+                  <Text fontSize={"$3"}>
+                    {nFormatter((allComments ?? []).length)} comments
+                  </Text>
                 </View>
               </View>
             </View>

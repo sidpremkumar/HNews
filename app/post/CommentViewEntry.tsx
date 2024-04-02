@@ -1,13 +1,14 @@
 import { View } from "tamagui";
 import RecursiveComment from "../../components/RecursiveComment";
+import { AlgoliaCommentRaw } from "../../utils/HackerNewsClient/HackerNewsClient.types";
 
-const CommentViewEntry: React.FC<{ commentId: number; postId: number }> = ({
-  commentId,
-  postId,
-}) => {
+const CommentViewEntry: React.FC<{
+  commentData: AlgoliaCommentRaw;
+  postId: number;
+}> = ({ commentData, postId }) => {
   return (
     <View>
-      <RecursiveComment commentId={commentId} postId={postId} />
+      <RecursiveComment commentData={commentData} postId={postId} />
     </View>
   );
 };

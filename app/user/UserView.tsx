@@ -177,6 +177,7 @@ const UserView: React.FC<{ userId: string }> = ({ userId }) => {
 
             <Text textAlign="center" fontSize={"$7"}>
               🎂 {dayjs(userData.created * 1000).format("MMMM DD, YYYY")} (
+              {/* @ts-ignore */}
               {dayjs(userData.created * 1000).from(dayjs())})
             </Text>
 

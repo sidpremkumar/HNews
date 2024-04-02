@@ -2,6 +2,7 @@ import * as Keychain from "react-native-keychain";
 import CookieManager from "@react-native-cookies/cookies";
 import Bluebird from "bluebird";
 import {
+  AlgoliaGetPostRaw,
   GetCommentResponseRaw,
   GetStoryResponseRaw,
   GetUserResponseRaw,
@@ -60,38 +61,6 @@ class HackerNewsClient {
   }
 
   /**
-   * Get data for a story
-   */
-  async getStoryDetails(
-    postId: number
-  ): Promise<GetStoryResponseRaw | undefined> {
-    const url = new URL(`item/${postId}.json?print=pretty`, this.baseURL).href;
-    let attempts = 0;
-    let storyInfo: GetStoryResponseRaw;
-    try {
-      while (attempts < 3) {
-        try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error("Fetch failed");
-          storyInfo = await response.json();
-          return storyInfo;
-        } catch (error) {
-          attempts++;
-          await new Promise((resolve) =>
-            setTimeout(resolve, 250 * Math.random())
-          );
-          if (attempts >= 3) {
-            throw new Error(`TOO MANY ATTEMPTS`);
-          }
-        }
-      }
-    } catch (err) {
-      console.error(`Error getting story info: ${url}`, err);
-      return undefined;
-    }
-  }
-
-  /**
    * Get data for a comment
    */
   async getCommentDetails(commentId: number): Promise<GetCommentResponseRaw> {
@@ -102,59 +71,11 @@ class HackerNewsClient {
   }
 
   /**
-   * Recursivly gets all comments
+   * Use Algolia to get all data for a post
    */
-  async getAllComments(
-    initalCommentIds: number[]
-  ): Promise<{ allComments: GetCommentResponseRaw[]; moreComments: boolean }> {
-    let queue: number[] = [];
-    /**
-     * Push all current kids on the queue
-     */
-    queue.push(...initalCommentIds);
-
-    const toReturn: GetCommentResponseRaw[] = [];
-
-    while (queue.length > 0) {
-      try {
-        const newQueue: number[] = [];
-
-        const commentData = await Bluebird.map(
-          queue,
-          async (commentId) => {
-            try {
-              const comment = await this.getCommentDetails(commentId);
-
-              /**
-               * Add all comments to the queue
-               */
-              newQueue.push(...(comment.kids ?? []));
-
-              return comment;
-            } catch (err) {
-              console.error(`Error getting comments recursibly`, err);
-              return undefined;
-            }
-          },
-          { concurrency: 5 }
-        );
-
-        const nonUndefined: GetCommentResponseRaw[] = commentData.filter(
-          (comment) => comment !== undefined
-        ) as GetCommentResponseRaw[];
-        toReturn.push(...nonUndefined);
-        queue = newQueue;
-
-        if (toReturn.length > 100) {
-          return { allComments: toReturn, moreComments: true };
-        }
-      } catch (err) {
-        console.error(`Bad error getting all comments`, err);
-        return { allComments: toReturn, moreComments: false };
-      }
-    }
-
-    return { allComments: toReturn, moreComments: false };
+  async getAllData(postId: number) {
+    const result = await fetch(`https://hn.algolia.com/api/v1/items/${postId}`);
+    return result.json() as unknown as AlgoliaGetPostRaw;
   }
 
   /**

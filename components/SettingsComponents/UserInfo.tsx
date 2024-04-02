@@ -8,6 +8,7 @@ import { ActivityIndicator } from "react-native";
 import dayjs from "dayjs";
 import * as WebBrowser from "expo-web-browser";
 import WebView from "react-native-webview";
+import { webViewScript } from "../RecursiveComment";
 
 const UserInfo: React.FC<{}> = () => {
   const isUserLoggedIn = useSelector(
@@ -60,6 +61,7 @@ const UserInfo: React.FC<{}> = () => {
             <View width={"100%"}>
               <Text textAlign="center" fontSize={"$5"}>
                 🎂 {dayjs(userInfo.created * 1000).format("MMMM DD, YYYY")} (
+                {/* @ts-ignore */}
                 {dayjs(userInfo.created * 1000).from(dayjs())})
               </Text>
 
@@ -79,6 +81,7 @@ const UserInfo: React.FC<{}> = () => {
                   width={"80%"}
                   minHeight={!userInfo.about ? 0 : 100}
                   height={webviewHeight}
+                  marginVertical={5}
                 >
                   {userInfo.about ? (
                     <WebView

@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text } from "tamagui";
 import HackerNewsClient from "../utils/HackerNewsClient/HackerNewsClient";
-import { GetCommentResponseRaw } from "../utils/HackerNewsClient/HackerNewsClient.types";
+import {
+  AlgoliaCommentRaw,
+  GetCommentResponseRaw,
+} from "../utils/HackerNewsClient/HackerNewsClient.types";
 import { ActivityIndicator } from "react-native";
 import dayjs from "dayjs";
 import WebView from "react-native-webview";
@@ -15,7 +18,6 @@ import { setCurrentlyViewingUser } from "../Redux/userStateReducer";
 import { router } from "expo-router";
 import BlinkInWrapper from "./BlinkInWrapper";
 import getRelativeOrAbsoluteTime from "../utils/getRelativeOrAbsoluteTime";
-import { addToCommentData } from "../Redux/postStateReducer";
 
 export const webViewScript = `
 (function() {
@@ -24,22 +26,11 @@ window.ReactNativeWebView.postMessage(document.documentElement.scrollHeight);
 `;
 
 const RecursiveComment: React.FC<{
-  commentId: number;
+  commentData: AlgoliaCommentRaw;
   postId: number;
   depth?: number;
-}> = ({ commentId, postId, depth = 0 }) => {
-  const commentData = useSelector((state: ReduxStoreInterface) =>
-    state.postState.postDataMapping[postId].commentData?.find(
-      (c) => c.id === commentId
-    )
-  );
+}> = ({ commentData, postId, depth = 0 }) => {
   const webViewRef = useRef(null);
-  const postDataMapping = useSelector(
-    (state: ReduxStoreInterface) => state.postState.postDataMapping
-  );
-  const currentlyViewingPost = useSelector(
-    (state: ReduxStoreInterface) => state.postState.currentlyViewingPost
-  );
 
   const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
     undefined
@@ -48,23 +39,7 @@ const RecursiveComment: React.FC<{
   const [showBody, setShowBody] = useState(true);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    Promise.resolve().then(async () => {
-      if (commentData === undefined) {
-        /**
-         * We need to query for this comment
-         */
-        const commentDataPulled = await HackerNewsClient.getCommentDetails(
-          commentId
-        );
-        dispatch(
-          addToCommentData({ postId: postId, commentData: commentDataPulled })
-        );
-      }
-    });
-  }, []);
-
-  const commentTime = dayjs((commentData?.time ?? 0) * 1000);
+  const commentTime = dayjs(commentData?.created_at);
   const commentText = commentData?.text ?? "";
 
   let commentTimeText = getRelativeOrAbsoluteTime(commentTime);
@@ -102,14 +77,14 @@ const RecursiveComment: React.FC<{
                     onPress={() => {
                       dispatch(
                         setCurrentlyViewingUser({
-                          newState: commentData.by ?? "",
+                          newState: commentData.author ?? "",
                         })
                       );
                       router.push("/user");
                     }}
                   >
                     <View flexDirection="row">
-                      <Text color={mainGrey}>{commentData.by}</Text>
+                      <Text color={mainGrey}>{commentData.author}</Text>
                       <Text color={mainGrey}> • </Text>
                       <Text color={mainGrey}>{commentTimeText}</Text>
                     </View>
@@ -171,11 +146,11 @@ const RecursiveComment: React.FC<{
               {showChildren === true ? (
                 <View>
                   {/* Now for each kid we need to recursivly call and offsett */}
-                  {(commentData.kids ?? []).map((d) => {
+                  {(commentData.children ?? []).map((d) => {
                     return (
-                      <View key={d}>
+                      <View key={d.id}>
                         <RecursiveComment
-                          commentId={d}
+                          commentData={d}
                           postId={postId}
                           depth={depth + 1}
                         />
@@ -186,7 +161,7 @@ const RecursiveComment: React.FC<{
               ) : (
                 // If we have something to show, let the user know that
                 <View>
-                  {(commentData.kids ?? []).length > 0 &&
+                  {(commentData.children ?? []).length > 0 &&
                   showChildren === false ? (
                     <View justifyContent="center" alignItems="center">
                       <TouchableOpacity

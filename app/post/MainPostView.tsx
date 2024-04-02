@@ -85,7 +85,8 @@ const MainPostView: React.FC<{}> = () => {
   }, []);
 
   const urlDomain = new URL(
-    postMetadata?.storyData?.url ?? `https://${postMetadata?.storyData?.by}.com`
+    postMetadata?.storyData?.url ??
+      `https://${postMetadata?.storyData?.author}.com`
   ).hostname;
   const emoji = `${domainToEmoji(urlDomain)}`;
   return (
@@ -138,7 +139,7 @@ const MainPostView: React.FC<{}> = () => {
       <View height={windowHeight}>
         <CommentsView
           postId={postMetadata?.storyData?.id ?? 0}
-          initalKids={postMetadata?.storyData?.kids ?? []}
+          initalKids={postMetadata?.storyData?.children ?? []}
           headerComponent={
             // This is our main post content
             <View
@@ -222,7 +223,7 @@ $(this).scrollTop(0);
                 {/* Show info on the post itself */}
                 <View flexDirection="row">
                   <Text color={mainGrey}>
-                    {postMetadata?.storyData?.score} points
+                    {postMetadata?.storyData?.points} points
                   </Text>
                   <Text color={mainGrey}> • </Text>
                   <View zIndex={99}>
@@ -230,14 +231,14 @@ $(this).scrollTop(0);
                       onPress={() => {
                         dispatch(
                           setCurrentlyViewingUser({
-                            newState: postMetadata?.storyData?.by ?? "",
+                            newState: postMetadata?.storyData?.author ?? "",
                           })
                         );
                         router.push("/user");
                       }}
                     >
                       <Text color={mainGrey}>
-                        {postMetadata?.storyData?.by}
+                        {postMetadata?.storyData?.author}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -245,7 +246,7 @@ $(this).scrollTop(0);
                   <Text color={mainGrey}> • </Text>
                   <Text color={mainGrey}>
                     {getRelativeOrAbsoluteTime(
-                      dayjs((postMetadata?.storyData?.time ?? 0) * 1000)
+                      dayjs(postMetadata?.storyData?.created_at)
                     )}
                   </Text>
 
@@ -280,15 +281,9 @@ $(this).scrollTop(0);
                         }
 
                         if (upvoteURL) {
-                          /**
-                           * Otherwise we're logged in, lets try to upvote
-                           */
                           const response =
                             await HackerNewsClient.makeAuthRequest(upvoteURL);
                           if (response === true) {
-                            /**
-                             * Inrease the points
-                             */
                             dispatch(
                               increaseUpvoteNumber({
                                 postId: postMetadata?.storyData?.id ?? 0,
@@ -303,15 +298,9 @@ $(this).scrollTop(0);
                             setDownvoteURL(downvoteURLPulled);
                           }
                         } else if (downvoteURL) {
-                          /**
-                           * Otherwise we're logged in, lets try to downvote
-                           */
                           const response =
                             await HackerNewsClient.makeAuthRequest(downvoteURL);
                           if (response === true) {
-                            /**
-                             * Inrease the points
-                             */
                             dispatch(
                               decreaseUpvoteNumber({
                                 postId: postMetadata?.storyData?.id ?? 0,
@@ -323,15 +312,17 @@ $(this).scrollTop(0);
                               await HackerNewsClient.getUpvoteUrl(
                                 `${postMetadata?.storyData?.id ?? 0}`
                               );
-
-                            console.log(`UPVOTEURL`, upvoteURLPulled);
                             setUpvoteURL(upvoteURLPulled);
                           }
                         }
                       }}
                     >
                       <Text color={mainGrey}>
-                        {upvoteURL !== undefined ? "upvote" : "unvote"}
+                        {upvoteURL !== undefined
+                          ? "upvote"
+                          : downvoteURL !== undefined
+                          ? "unvote"
+                          : ""}
                       </Text>
                     </TouchableOpacity>
                   </View>

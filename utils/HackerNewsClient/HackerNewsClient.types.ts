@@ -34,3 +34,30 @@ export interface GetUserResponseRaw {
    */
   submitted: number[];
 }
+
+export interface AlgoliaCommentRaw {
+  author: string;
+  children: AlgoliaCommentRaw[];
+  created_at: string;
+  created_at_i: number;
+  id: number;
+  options: any[];
+  parent_id: number;
+  points: number;
+  story_id: number;
+  text: string;
+  title?: string;
+  type: string;
+  url?: string;
+}
+export interface AlgoliaGetPostRaw {
+  id: number;
+  created_at: string;
+  author: string;
+  title: string;
+  url: string;
+  text: string;
+  points: number;
+  parent_id: number | null;
+  children: AlgoliaCommentRaw[];
+}

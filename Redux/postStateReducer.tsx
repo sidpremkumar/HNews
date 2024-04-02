@@ -1,5 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import {
+  AlgoliaGetPostRaw,
   GetCommentResponseRaw,
   GetStoryResponseRaw,
 } from "../utils/HackerNewsClient/HackerNewsClient.types";
@@ -8,9 +9,7 @@ export interface PostStateReducer {
   currentlyViewingPost: number | undefined;
   postDataMapping: {
     [key: number]: {
-      storyData: GetStoryResponseRaw | undefined;
-      commentData: GetCommentResponseRaw[] | undefined;
-      moreComments?: boolean;
+      storyData: AlgoliaGetPostRaw | undefined;
     };
   };
 }
@@ -27,19 +26,6 @@ export const counterSlice = createSlice({
       action: PayloadAction<{ newState: number }>
     ) => {
       state.currentlyViewingPost = action.payload.newState;
-    },
-    addToCommentData: (
-      state,
-      action: PayloadAction<{
-        postId: number;
-        commentData: GetCommentResponseRaw;
-      }>
-    ) => {
-      if (state.postDataMapping[action.payload.postId] !== undefined) {
-        state.postDataMapping[action.payload.postId].commentData?.push(
-          action.payload.commentData
-        );
-      }
     },
     increaseUpvoteNumber: (
       state,
@@ -68,16 +54,12 @@ export const counterSlice = createSlice({
     setStoryResponseRaw: (
       state,
       action: PayloadAction<{
-        storyData?: GetStoryResponseRaw;
-        commentData?: GetCommentResponseRaw[];
-        moreComments?: boolean;
+        storyData?: AlgoliaGetPostRaw;
         postId: number;
       }>
     ) => {
       state.postDataMapping[action.payload.postId] = {
         storyData: action.payload.storyData,
-        commentData: action.payload.commentData,
-        moreComments: action.payload.moreComments,
       };
     },
   },
@@ -87,7 +69,6 @@ export const counterSlice = createSlice({
 export const {
   setStoryResponseRaw,
   setCurrentlyViewingPost,
-  addToCommentData,
   increaseUpvoteNumber,
   decreaseUpvoteNumber,
 } = counterSlice.actions;
