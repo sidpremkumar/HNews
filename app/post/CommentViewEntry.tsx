@@ -5,10 +5,15 @@ import { AlgoliaCommentRaw } from "../../utils/HackerNewsClient/HackerNewsClient
 const CommentViewEntry: React.FC<{
   commentData: AlgoliaCommentRaw;
   postId: number;
-}> = ({ commentData, postId }) => {
+  postOP: string;
+}> = ({ commentData, postId, postOP }) => {
   return (
     <View>
-      <RecursiveComment commentData={commentData} postId={postId} />
+      <RecursiveComment
+        commentData={commentData}
+        postId={postId}
+        postOP={postOP}
+      />
     </View>
   );
 };

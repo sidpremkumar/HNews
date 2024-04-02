@@ -139,6 +139,7 @@ const MainPostView: React.FC<{}> = () => {
       <View height={windowHeight}>
         <CommentsView
           postId={postMetadata?.storyData?.id ?? 0}
+          postOP={postMetadata?.storyData?.author ?? ""}
           initalKids={postMetadata?.storyData?.children ?? []}
           headerComponent={
             // This is our main post content

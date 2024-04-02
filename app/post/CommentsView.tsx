@@ -6,8 +6,9 @@ import { AlgoliaCommentRaw } from "../../utils/HackerNewsClient/HackerNewsClient
 const CommentsView: React.FC<{
   initalKids: AlgoliaCommentRaw[];
   postId: number;
+  postOP: string;
   headerComponent?: React.JSX.Element;
-}> = ({ headerComponent, initalKids, postId }) => {
+}> = ({ headerComponent, initalKids, postId, postOP }) => {
   return (
     //   {/* Use a flatlist so it lazy loads since it might be a lot of comments */}
     <FlatList
@@ -20,7 +21,11 @@ const CommentsView: React.FC<{
       renderItem={({ item }) => {
         return (
           <View key={item.id}>
-            <CommentViewEntry commentData={item} postId={postId} />
+            <CommentViewEntry
+              commentData={item}
+              postId={postId}
+              postOP={postOP}
+            />
           </View>
         );
       }}

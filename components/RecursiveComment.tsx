@@ -27,9 +27,10 @@ window.ReactNativeWebView.postMessage(document.documentElement.scrollHeight);
 
 const RecursiveComment: React.FC<{
   commentData: AlgoliaCommentRaw;
+  postOP: string;
   postId: number;
   depth?: number;
-}> = ({ commentData, postId, depth = 0 }) => {
+}> = ({ commentData, postId, depth = 0, postOP }) => {
   const webViewRef = useRef(null);
 
   const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
@@ -84,7 +85,14 @@ const RecursiveComment: React.FC<{
                     }}
                   >
                     <View flexDirection="row">
-                      <Text color={mainGrey}>{commentData.author}</Text>
+                      <Text
+                        color={
+                          postOP === commentData.author ? "orange" : mainGrey
+                        }
+                      >
+                        {commentData.author}
+                        {postOP === commentData.author ? " [OP]" : ""}
+                      </Text>
                       <Text color={mainGrey}> • </Text>
                       <Text color={mainGrey}>{commentTimeText}</Text>
                     </View>
@@ -153,6 +161,7 @@ const RecursiveComment: React.FC<{
                           commentData={d}
                           postId={postId}
                           depth={depth + 1}
+                          postOP={postOP}
                         />
                       </View>
                     );
