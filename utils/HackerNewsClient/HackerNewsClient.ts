@@ -133,6 +133,27 @@ class HackerNewsClient {
   }
 
   /**
+   * Check and re-validate if cookies expires
+   */
+  async checkAndRevalidate() {
+    const url = this.getLoginURL();
+    const cookies = await CookieManager.get(url);
+    if (!cookies.user || !cookies.user.value) {
+      /**
+       * We need to re-login
+       */
+      const credentials = await Keychain.getGenericPassword();
+      if (credentials) {
+        await this.loginWithCredentials(
+          credentials.username,
+          credentials.password
+        );
+      }
+    }
+    console.log(`HERE`, cookies);
+  }
+
+  /**
    * Logout a user
    */
   async logout() {
@@ -218,6 +239,7 @@ class HackerNewsClient {
    * Get a parsed html of a post
    */
   async getParsedHTML(postId: number) {
+    await this.checkAndRevalidate();
     const url = new URL(`item?id=${postId}`, "https://news.ycombinator.com")
       .href;
     return fetch(url, {
@@ -236,6 +258,7 @@ class HackerNewsClient {
    * @see getUpvoteUrl
    */
   async makeAuthRequest(url: string) {
+    await this.checkAndRevalidate();
     const response = await fetch(url, {
       credentials: "include",
     });
@@ -246,7 +269,9 @@ class HackerNewsClient {
   /**
    * Write a new comment
    */
-  async writeComment(postId: number, commentBody) {
+  async writeComment(postId: number, commentBody: string) {
+    await this.checkAndRevalidate();
+
     /**
      * First extract the hmac from the input
      */
