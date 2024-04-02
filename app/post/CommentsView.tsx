@@ -14,8 +14,8 @@ const CommentsView: React.FC<{
     <FlatList
       ListFooterComponent={<View height={50} />}
       ListHeaderComponent={headerComponent ?? undefined}
-      maxToRenderPerBatch={1}
-      initialNumToRender={1}
+      maxToRenderPerBatch={5}
+      initialNumToRender={5}
       windowSize={1}
       data={initalKids}
       renderItem={({ item }) => {
