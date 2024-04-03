@@ -8,7 +8,15 @@ Fully open source hacker news client for both iOS and Android.
 
 ## Release Status
 
-Currently awaiting response from Apple and Google. Will update once its been published to the relevant stores
+### Apple
+
+Apple did not like this app, claiming it was not different enough from a webpage ([others](https://forums.developer.apple.com/forums/thread/95085) have had similar issues).
+
+But you can download the app via TestFlight [here](https://testflight.apple.com/join/DjtQPqho)
+
+### Google
+
+Waiting for response from Google Play Console.
 
 ## Known Bugs
 
