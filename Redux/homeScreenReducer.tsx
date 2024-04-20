@@ -8,6 +8,7 @@ export interface FilterData {
 export interface PostStateReducer {
   topStories?: number[];
   homeScreenRefreshing: boolean;
+  scrollToTopHomeScreen: boolean;
   filterSelected?: FilterData;
 }
 export const counterSlice = createSlice({
@@ -15,6 +16,7 @@ export const counterSlice = createSlice({
   initialState: {
     topStories: undefined,
     homeScreenRefreshing: false,
+    scrollToTopHomeScreen: false,
     filterSelected: undefined,
   } as PostStateReducer,
   reducers: {
@@ -42,12 +44,24 @@ export const counterSlice = createSlice({
     ) => {
       state.homeScreenRefreshing = action.payload.newState;
     },
+    setScrollToTopHomeScreen: (
+      state,
+      action: PayloadAction<{
+        newState: boolean;
+      }>
+    ) => {
+      state.scrollToTopHomeScreen = action.payload.newState;
+    },
   },
   selectors: {},
 });
 
-export const { setTopStories, setFilterSelected, setHomeScreenRefreshing } =
-  counterSlice.actions;
+export const {
+  setTopStories,
+  setFilterSelected,
+  setHomeScreenRefreshing,
+  setScrollToTopHomeScreen,
+} = counterSlice.actions;
 export const {} = counterSlice.selectors;
 
 export default counterSlice.reducer;

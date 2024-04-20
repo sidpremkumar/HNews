@@ -58,7 +58,7 @@ const RecursiveComment: React.FC<{
   const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
     undefined
   );
-  const [showChildren, setShowChildren] = useState(false);
+  const [showChildren, setShowChildren] = useState(true);
   const [showBody, setShowBody] = useState(true);
   const dispatch = useDispatch();
   const [upvoteURL, setUpvoteURL] = useState<string | undefined>(undefined);

@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 import LoginButton from "../../components/SettingsComponents/LoginButton";
 import LogoutButton from "../../components/SettingsComponents/LogoutButton";
 import UserInfo from "../../components/SettingsComponents/UserInfo";
+import ViewProfileButton from "../../components/ViewProfileButton";
 
 export default function App() {
   const windowHeight = Dimensions.get("window").height;
@@ -34,6 +35,12 @@ export default function App() {
 
           <View width={"100%"}>
             {isUserLoggedIn === true ? <LogoutButton /> : <LoginButton />}
+          </View>
+
+          <View height={10} />
+
+          <View width={"100%"}>
+            {isUserLoggedIn === true ? <ViewProfileButton /> : <></>}
           </View>
 
           <View height={10} />

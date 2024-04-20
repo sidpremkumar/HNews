@@ -77,3 +77,4 @@ yarn-error.*
 # @end expo-cli
 
 *.ipa
+*.aab

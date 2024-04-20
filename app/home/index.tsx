@@ -6,7 +6,7 @@ import {
 } from "react-native";
 import { View, Text, Image } from "tamagui"; // or '@tamagui/core'
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
 import HNArticle from "../../components/HomeComponents/HNArticle";
 import { ReduxStoreInterface } from "../../Redux/store";
@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   setFilterSelected,
   setHomeScreenRefreshing,
+  setScrollToTopHomeScreen,
   setTopStories,
 } from "../../Redux/homeScreenReducer";
 import { ScrollView } from "react-native-gesture-handler";
@@ -22,12 +23,16 @@ import FilterPill from "../../components/HomeComponents/FilterPills";
 export default function App() {
   const dispatch = useDispatch();
   const windowHeight = Dimensions.get("window").height;
+  const flatListRef = useRef(null);
 
   const topStories = useSelector(
     (state: ReduxStoreInterface) => state.homeScreen.topStories
   );
   const homeScreenRefreshing = useSelector(
     (state: ReduxStoreInterface) => state.homeScreen.homeScreenRefreshing
+  );
+  const scrollToTop = useSelector(
+    (state: ReduxStoreInterface) => state.homeScreen.scrollToTopHomeScreen
   );
   const filterSelected = useSelector(
     (state: ReduxStoreInterface) => state.homeScreen.filterSelected
@@ -77,10 +82,19 @@ export default function App() {
     });
   }, [homeScreenRefreshing, filterSelected]);
 
+  useEffect(() => {
+    if (scrollToTop && flatListRef.current) {
+      // @ts-ignore
+      flatListRef.current.scrollToOffset({ animated: true, offset: 0 });
+      dispatch(setScrollToTopHomeScreen({ newState: false }));
+    }
+  }, [scrollToTop, flatListRef]);
+
   const today = dayjs();
   return (
     <View paddingTop={60}>
       <FlatList
+        ref={flatListRef}
         refreshControl={
           <RefreshControl
             colors={["black"]}

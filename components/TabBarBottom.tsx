@@ -17,7 +17,8 @@ const TabBarBottom: React.FC<{
   color: string;
   focused: boolean;
   icon: React.JSX.Element;
-}> = ({ color, focused, icon }) => {
+  onPress?: () => void;
+}> = ({ color, focused, icon, onPress }) => {
   const scaleAdjustment = useRef(
     new Animated.Value(focused === true ? 1.2 : 1)
   ).current;
@@ -57,6 +58,9 @@ const TabBarBottom: React.FC<{
            * This doesnt work and idk why
            */
           startAnimate();
+          if (onPress) {
+            onPress();
+          }
         }}
       >
         {icon}

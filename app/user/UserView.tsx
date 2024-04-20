@@ -13,6 +13,7 @@ import * as WebBrowser from "expo-web-browser";
 import { webViewScript } from "../../components/RecursiveComment";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
+import ViewProfileButton from "../../components/ViewProfileButton";
 
 const UserView: React.FC<{ userId: string }> = ({ userId }) => {
   const windowHeight = Dimensions.get("window").height;
@@ -99,10 +100,7 @@ const UserView: React.FC<{ userId: string }> = ({ userId }) => {
           <View
             justifyContent="center"
             alignContent="center"
-            /**
-             * Slightly higher bc im a freak
-             */
-            height={windowHeight * 0.8}
+            marginVertical={150}
           >
             <Text textAlign="center" fontSize={"$10"}>
               {userData.id}
@@ -199,6 +197,31 @@ const UserView: React.FC<{ userId: string }> = ({ userId }) => {
             <Text textAlign="center" fontSize={"$7"}>
               ⚡️ Karma: {userData.karma}
             </Text>
+
+            <View
+              width={"100%"}
+              justifyContent="center"
+              alignContent="center"
+              alignItems="center"
+              marginVertical={10}
+            >
+              <View
+                backgroundColor={"black"}
+                height={2}
+                opacity={0.5}
+                width={"60%"}
+              />
+            </View>
+
+            <View
+              justifyContent="center"
+              alignContent="center"
+              alignItems="center"
+            >
+              <View width={"80%"}>
+                <ViewProfileButton profileName={userData.id} />
+              </View>
+            </View>
           </View>
         )}
       </ScrollView>

@@ -68,6 +68,10 @@ export default function domainToEmoji(urlDomain: string) {
       emoji = "👾 ";
       break;
     }
+    case "twitter.com": {
+      emoji = "🐤 ";
+      break;
+    }
     default: {
     }
   }
