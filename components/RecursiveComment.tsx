@@ -1,34 +1,27 @@
-import React, { useEffect, useRef, useState } from "react";
-import { View, Text } from "tamagui";
-import HackerNewsClient from "../utils/HackerNewsClient/HackerNewsClient";
-import {
-  AlgoliaCommentRaw,
-  GetCommentResponseRaw,
-} from "../utils/HackerNewsClient/HackerNewsClient.types";
-import { ActivityIndicator } from "react-native";
-import dayjs from "dayjs";
-import WebView from "react-native-webview";
-import * as WebBrowser from "expo-web-browser";
-import { mainGrey, mainPurple, mainStyles } from "../utils/main.styles";
-import { TouchableOpacity } from "react-native-gesture-handler";
-import { ReduxStoreInterface } from "../Redux/store";
-import { useDispatch, useSelector } from "react-redux";
 import { Feather } from "@expo/vector-icons";
-import { setCurrentlyViewingUser } from "../Redux/userStateReducer";
-import { router } from "expo-router";
-import BlinkInWrapper from "./BlinkInWrapper";
-import getRelativeOrAbsoluteTime from "../utils/getRelativeOrAbsoluteTime";
 import {
-  useToast,
-  VStack,
-  ToastTitle,
-  ToastDescription,
   Toast,
+  ToastDescription,
+  ToastTitle,
+  VStack,
+  useToast,
 } from "@gluestack-ui/themed";
-import {
-  increaseUpvoteNumber,
-  decreaseUpvoteNumber,
-} from "../Redux/postStateReducer";
+import dayjs from "dayjs";
+import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator } from "react-native";
+import { TouchableOpacity } from "react-native-gesture-handler";
+import WebView from "react-native-webview";
+import { useDispatch, useSelector } from "react-redux";
+import { Text, View } from "tamagui";
+import { ReduxStoreInterface } from "../Redux/store";
+import { setCurrentlyViewingUser } from "../Redux/userStateReducer";
+import HackerNewsClient from "../utils/HackerNewsClient/HackerNewsClient";
+import { AlgoliaCommentRaw } from "../utils/HackerNewsClient/HackerNewsClient.types";
+import getRelativeOrAbsoluteTime from "../utils/getRelativeOrAbsoluteTime";
+import { mainGrey, mainPurple, mainStyles } from "../utils/main.styles";
+import BlinkInWrapper from "./BlinkInWrapper";
 import CommentDialog from "./PostComponents/CommentDialog";
 
 export const webViewScript = `
@@ -58,7 +51,7 @@ const RecursiveComment: React.FC<{
   const [webviewHeight, setWebviewHeight] = useState<number | undefined>(
     undefined
   );
-  const [showChildren, setShowChildren] = useState(true);
+  const [showChildren, setShowChildren] = useState(false);
   const [showBody, setShowBody] = useState(true);
   const dispatch = useDispatch();
   const [upvoteURL, setUpvoteURL] = useState<string | undefined>(undefined);

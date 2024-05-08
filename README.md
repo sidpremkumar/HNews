@@ -16,7 +16,7 @@ But you can download the app via TestFlight [here](https://testflight.apple.com/
 
 ### Google
 
-Use [this](https://play.google.com/apps/internaltest/4700382531060013255) link to download it.
+Use [this](https://play.google.com/apps/internaltest/4700382531060013255)link to download it.
 
 ## Known Bugs
 
