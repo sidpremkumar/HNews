@@ -2,6 +2,10 @@
 
 Fully open source hacker news client for both iOS and Android.
 
+### Testflight
+
+Download via TestFlight [here](https://testflight.apple.com/join/DjtQPqho)
+
 <p align="center">
 <img src="readmeAssets/MainScreen.png" alt="drawing" width="350"/>
 </p>
