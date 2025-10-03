@@ -38,9 +38,8 @@
       }
     },
     "updates": {
-      "enabled": true,
-      "url": "https://u.expo.dev/15cf4545-901a-4d49-8ec7-f18f92a76818",
-      "fallbackToCacheTimeout": 60000
-    }
+      "enabled": false
+    },
+    "runtimeVersion": "exposdk:54.0.12"
   }
 }

@@ -4,10 +4,11 @@ require File.join(File.dirname(`node --print "require.resolve('react-native/pack
 require 'json'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
-ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
+ENV['RCT_NEW_ARCH_ENABLED'] = '1'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
+ENV['EX_UPDATES_NATIVE_DEBUG'] = '1'
 
-platform :ios, podfile_properties['ios.deploymentTarget'] || '13.4'
+platform :ios, '16.0'
 install! 'cocoapods',
   :deterministic_uuids => false
 
@@ -24,18 +25,8 @@ prepare_react_native_project!
 #   }
 # }
 # ```
-flipper_config = FlipperConfiguration.disabled
-if ENV['NO_FLIPPER'] == '1' then
-  # Explicitly disabled through environment variables
-  flipper_config = FlipperConfiguration.disabled
-elsif podfile_properties.key?('ios.flipper') then
-  # Configure Flipper in Podfile.properties.json
-  if podfile_properties['ios.flipper'] == 'true' then
-    flipper_config = FlipperConfiguration.enabled(["Debug", "Release"])
-  elsif podfile_properties['ios.flipper'] != 'false' then
-    flipper_config = FlipperConfiguration.enabled(["Debug", "Release"], { 'Flipper' => podfile_properties['ios.flipper'] })
-  end
-end
+# Flipper is disabled by default in newer React Native versions
+flipper_config = ENV['NO_FLIPPER'] == '1' ? false : false
 
 target 'HNews' do
   use_expo_modules!
@@ -48,9 +39,7 @@ target 'HNews' do
     :path => config[:reactNativePath],
     :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
     # An absolute path to your application root.
-    :app_path => "#{Pod::Config.instance.installation_root}/..",
-    # Note that if you have use_frameworks! enabled, Flipper will not work if enabled
-    :flipper_configuration => flipper_config
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
   post_install do |installer|
@@ -68,6 +57,22 @@ target 'HNews' do
         resource_bundle_target.build_configurations.each do |config|
           config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
         end
+      end
+    end
+
+    # Add configurations for all targets that might need C++ settings
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        # Set C++ standard and library for all targets
+        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++20'
+        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
+        
+        # Fix for Xcode 16+ and iOS 18+ compatibility
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+        
+        # Additional warnings fixes
+        config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+        config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
       end
     end
   end

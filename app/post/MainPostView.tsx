@@ -1,36 +1,37 @@
-import { useDispatch, useSelector } from "react-redux";
-import { Button, View, Text, TextArea } from "tamagui";
-import {
-  PostStateReducer,
-  decreaseUpvoteNumber,
-  increaseUpvoteNumber,
-} from "../../Redux/postStateReducer";
-import React, { useEffect, useRef, useState } from "react";
-import { router } from "expo-router";
-import { mainGrey, mainPurple, mainStyles } from "../../utils/main.styles";
 import { Feather } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native-gesture-handler";
-import domainToEmoji from "../../utils/domainToEmoji";
-import dayjs from "dayjs";
-import * as WebBrowser from "expo-web-browser";
-import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
-import { ActivityIndicator, Dimensions } from "react-native";
-import CommentsView from "./CommentsView";
-import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
-import WebView from "react-native-webview";
-import { webViewScript } from "../../components/RecursiveComment";
-import RenderLinkIcon from "../../components/RenderLinkIcon";
-import getRelativeOrAbsoluteTime from "../../utils/getRelativeOrAbsoluteTime";
-import { ReduxStoreInterface } from "../../Redux/store";
 import {
+  Toast,
+  ToastDescription,
+  ToastTitle,
   useToast,
   VStack,
-  ToastTitle,
-  ToastDescription,
-  Toast,
 } from "@gluestack-ui/themed";
-import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
+import dayjs from "dayjs";
+import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Dimensions } from "react-native";
+import { TouchableOpacity } from "react-native-gesture-handler";
+import WebView from "react-native-webview";
+import { useDispatch, useSelector } from "react-redux";
+import { Button, Text, View } from "tamagui";
+import AISummaryButton from "../../components/PostComponents/AISummaryButton";
 import CommentDialog from "../../components/PostComponents/CommentDialog";
+import { webViewScript } from "../../components/RecursiveComment";
+import RenderLinkIcon from "../../components/RenderLinkIcon";
+import {
+  decreaseUpvoteNumber,
+  increaseUpvoteNumber,
+  PostStateReducer,
+} from "../../Redux/postStateReducer";
+import { ReduxStoreInterface } from "../../Redux/store";
+import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
+import domainToEmoji from "../../utils/domainToEmoji";
+import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
+import getRelativeOrAbsoluteTime from "../../utils/getRelativeOrAbsoluteTime";
+import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
+import { mainGrey, mainPurple, mainStyles } from "../../utils/main.styles";
+import CommentsView from "./CommentsView";
 
 const MainPostView: React.FC<{}> = () => {
   const dispatch = useDispatch();
@@ -104,7 +105,7 @@ const MainPostView: React.FC<{}> = () => {
 
   const urlDomain = new URL(
     postMetadata?.storyData?.url ??
-      `https://${postMetadata?.storyData?.author}.com`
+    `https://${postMetadata?.storyData?.author}.com`
   ).hostname;
   const emoji = `${domainToEmoji(urlDomain)}`;
   return (
@@ -318,10 +319,8 @@ $(this).scrollTop(0);
                                 return (
                                   <Toast
                                     nativeID={toastId}
-                                    action="attention"
-                                    variant="solid"
                                   >
-                                    <VStack space="xs">
+                                    <VStack>
                                       <ToastTitle>
                                         🚨 Please Login First
                                       </ToastTitle>
@@ -369,14 +368,25 @@ $(this).scrollTop(0);
                           {upvoteURL !== undefined
                             ? "upvote"
                             : downvoteURL !== undefined
-                            ? "unvote"
-                            : ""}
+                              ? "unvote"
+                              : ""}
                         </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
                 </TouchableOpacity>
               </View>
+
+              {/* AI Summary Button */}
+              <AISummaryButton
+                postId={postMetadata?.storyData?.id ?? 0}
+                postTitle={postMetadata?.storyData?.title}
+                postUrl={postMetadata?.storyData?.url}
+                postAuthor={postMetadata?.storyData?.author}
+                postPoints={postMetadata?.storyData?.points}
+                postText={postMetadata?.storyData?.text}
+                comments={postMetadata?.storyData?.children}
+              />
 
               {/* <View marginHorizontal={10}>
                 <TextArea

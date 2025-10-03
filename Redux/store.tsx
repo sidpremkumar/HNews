@@ -1,15 +1,19 @@
-import { Reducer, combineReducers, configureStore } from "@reduxjs/toolkit";
-import postStateReducer from "./postStateReducer";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { useDispatch } from "react-redux";
-import homeScreenReducer from "./homeScreenReducer";
-import userStateReducer from "./userStateReducer";
+import aiSummaryCacheReducer from "./aiSummaryCacheReducer";
 import authUserReducer from "./authUserReducer";
+import homeScreenReducer from "./homeScreenReducer";
+import postStateReducer from "./postStateReducer";
+import settingsReducer from "./settingsReducer";
+import userStateReducer from "./userStateReducer";
 
 const appReducer = combineReducers({
   postState: postStateReducer,
   userState: userStateReducer,
   homeScreen: homeScreenReducer,
   authUser: authUserReducer,
+  settings: settingsReducer,
+  aiSummaryCache: aiSummaryCacheReducer,
 });
 
 // @ts-ignore

@@ -1,62 +1,74 @@
-import { useEffect, useState } from "react";
-import { View, Text, Image } from "tamagui";
-import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
-import {
-  AlgoliaCommentRaw,
-  AlgoliaGetPostRaw,
-  GetCommentResponseRaw,
-  GetStoryResponseRaw,
-} from "../../utils/HackerNewsClient/HackerNewsClient.types";
-import { ActivityIndicator, Dimensions } from "react-native";
-import {
-  mainGrey,
-  mainPurple,
-  mainStyles,
-  spotifyBlack,
-} from "../../utils/main.styles";
 import dayjs from "dayjs";
-import nFormatter from "../../utils/nFormatter";
-import domainToEmoji from "../../utils/domainToEmoji";
+import { router } from "expo-router";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { useDispatch, useSelector } from "react-redux";
+import { Text, View } from "tamagui";
 import {
   setCurrentlyViewingPost,
   setStoryResponseRaw,
 } from "../../Redux/postStateReducer";
-import { router } from "expo-router";
-import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
 import { ReduxStoreInterface } from "../../Redux/store";
 import { setCurrentlyViewingUser } from "../../Redux/userStateReducer";
+import domainToEmoji from "../../utils/domainToEmoji";
+import { getOpenGraphImageURL } from "../../utils/getOpenGraphImageURL";
+import getRelativeOrAbsoluteTime from "../../utils/getRelativeOrAbsoluteTime";
+import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
+import {
+  AlgoliaCommentRaw,
+  AlgoliaGetPostRaw
+} from "../../utils/HackerNewsClient/HackerNewsClient.types";
+import {
+  mainGrey,
+  mainPurple,
+  mainStyles
+} from "../../utils/main.styles";
+import nFormatter from "../../utils/nFormatter";
 import BlinkInWrapper from "../BlinkInWrapper";
 import RenderLinkIcon from "../RenderLinkIcon";
-import getRelativeOrAbsoluteTime from "../../utils/getRelativeOrAbsoluteTime";
 
 const HNArticleRoot: React.FC<{
   postId: number;
   postNumber: number;
-}> = ({ postId, postNumber }) => {
+}> = memo(({ postId, postNumber }) => {
   const dispatch = useDispatch();
   const postDataMapping = useSelector(
     (state: ReduxStoreInterface) => state.postState.postDataMapping
   );
   const postData = postDataMapping[postId];
+  const [hasTriedFetch, setHasTriedFetch] = useState(false);
 
   useEffect(() => {
-    Promise.resolve().then(async () => {
-      if (postDataMapping[postId] === undefined) {
-        /**
-         * Get all our data from algolia
-         */
-        const allData = await HackerNewsClient.getAllData(postId);
-        dispatch(
-          setStoryResponseRaw({
-            storyData: allData,
-            postId,
-          })
-        );
-      }
-    });
-  }, []);
+    // Only try to fetch if we haven't tried before and data doesn't exist
+    if (postDataMapping[postId] === undefined && !hasTriedFetch) {
+      setHasTriedFetch(true);
+
+      Promise.resolve().then(async () => {
+        try {
+          /**
+           * Get all our data from algolia
+           */
+          const allData = await HackerNewsClient.getAllData(postId);
+          dispatch(
+            setStoryResponseRaw({
+              storyData: allData,
+              postId,
+            })
+          );
+        } catch (error) {
+          console.error(`Failed to fetch data for post ${postId}:`, error);
+          // Mark as failed so we don't keep retrying
+          dispatch(
+            setStoryResponseRaw({
+              storyData: undefined, // Mark as failed
+              postId,
+            })
+          );
+        }
+      });
+    }
+  }, [postId, postDataMapping, dispatch, hasTriedFetch]); // Add hasTriedFetch dependency
 
   if (!postData) {
     return (
@@ -67,23 +79,30 @@ const HNArticleRoot: React.FC<{
   }
 
   if (!postData?.storyData) {
-    return <></>;
+    // Show a placeholder for failed posts
+    return (
+      <View height={100} width={"100%"} justifyContent="center" padding={10}>
+        <Text color={mainGrey} fontSize={"$3"}>
+          Failed to load post {postId}
+        </Text>
+      </View>
+    );
   }
 
   return <HNArticle storyData={postData.storyData} postNumber={postNumber} />;
-};
+});
 
 const HNArticle: React.FC<{
   storyData: AlgoliaGetPostRaw;
   postNumber: number;
-}> = ({ storyData, postNumber }) => {
+}> = memo(({ storyData, postNumber }) => {
   const urlDomain = new URL(storyData.url ?? `https://${storyData.author}.com`)
     .hostname;
   const dispatch = useDispatch();
   const emoji = `${domainToEmoji(urlDomain)}`;
   const [imageURL, setImageURL] = useState<string | undefined>(undefined);
 
-  const extractChildren = (
+  const extractChildren = useCallback((
     children: AlgoliaGetPostRaw["children"]
   ): AlgoliaCommentRaw[] => {
     if (!children) {
@@ -93,8 +112,23 @@ const HNArticle: React.FC<{
       return [c, ...extractChildren(c.children)];
     });
     return allChildren.flat();
-  };
-  const allComments = extractChildren(storyData.children);
+  }, []);
+
+  const allComments = useMemo(() => extractChildren(storyData.children), [storyData.children, extractChildren]);
+
+  const handlePostPress = useCallback(() => {
+    dispatch(setCurrentlyViewingPost({ newState: storyData.id }));
+    router.push("/post");
+  }, [dispatch, storyData.id]);
+
+  const handleUserPress = useCallback(() => {
+    dispatch(
+      setCurrentlyViewingUser({
+        newState: storyData.author,
+      })
+    );
+    router.push("/user");
+  }, [dispatch, storyData.author]);
 
   useEffect(() => {
     Promise.resolve().then(async () => {
@@ -103,7 +137,7 @@ const HNArticle: React.FC<{
         setImageURL(openGraphImage);
       }
     });
-  }, []);
+  }, [storyData.url]);
 
   return (
     <BlinkInWrapper>
@@ -117,10 +151,7 @@ const HNArticle: React.FC<{
         }}
       >
         <TouchableOpacity
-          onPress={() => {
-            dispatch(setCurrentlyViewingPost({ newState: storyData.id }));
-            router.push("/post");
-          }}
+          onPress={handlePostPress}
         >
           <View flexDirection="row" marginBottom={2}>
             <Text fontSize={"$3"} color={mainPurple}>
@@ -142,14 +173,7 @@ const HNArticle: React.FC<{
 
                 <View paddingTop={8} flexDirection="row">
                   <TouchableOpacity
-                    onPress={() => {
-                      dispatch(
-                        setCurrentlyViewingUser({
-                          newState: storyData.author,
-                        })
-                      );
-                      router.push("/user");
-                    }}
+                    onPress={handleUserPress}
                   >
                     <Text fontSize={"$3"}>
                       by {storyData.author?.replace(" ", "")}
@@ -189,6 +213,6 @@ const HNArticle: React.FC<{
       </View>
     </BlinkInWrapper>
   );
-};
+});
 
 export default HNArticleRoot;

@@ -1,30 +1,30 @@
-import { useState } from "react";
 import {
+  Toast,
+  ToastDescription,
+  ToastTitle,
   useToast,
   VStack,
-  ToastTitle,
-  ToastDescription,
-  Toast,
 } from "@gluestack-ui/themed";
-import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
+import * as WebBrowser from "expo-web-browser";
+import { useState } from "react";
+import { TouchableOpacity } from "react-native-gesture-handler";
+import { useDispatch } from "react-redux";
 import {
-  View,
-  Text,
   Adapt,
+  Button,
   Dialog,
   Fieldset,
   Input,
   Label,
   Sheet,
+  Text,
   Unspaced,
+  View,
   XStack,
-  Button,
 } from "tamagui";
-import { spotifyBlack } from "../../utils/main.styles";
-import { TouchableOpacity } from "react-native-gesture-handler";
-import { useDispatch } from "react-redux";
 import { setUserLoggedIn, setUserName } from "../../Redux/authUserReducer";
-import * as WebBrowser from "expo-web-browser";
+import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
+import { spotifyBlack } from "../../utils/main.styles";
 
 const LoginButton: React.FC<{}> = () => {
   const [username, setUsername] = useState<string | undefined>(undefined);

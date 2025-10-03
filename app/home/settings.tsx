@@ -1,14 +1,15 @@
-import { Dimensions, Keyboard, StyleSheet } from "react-native";
-import { View, Text, ScrollView } from "tamagui";
-import { mainPurple } from "../../utils/main.styles";
-import { TouchableOpacity } from "react-native-gesture-handler";
 import * as WebBrowser from "expo-web-browser";
-import { ReduxStoreInterface } from "../../Redux/store";
+import { Dimensions, Keyboard, StyleSheet } from "react-native";
+import { TouchableOpacity } from "react-native-gesture-handler";
 import { useSelector } from "react-redux";
+import { ScrollView, Text, View } from "tamagui";
+import GeminiApiKeyButton from "../../components/SettingsComponents/GeminiApiKeyButton";
 import LoginButton from "../../components/SettingsComponents/LoginButton";
 import LogoutButton from "../../components/SettingsComponents/LogoutButton";
 import UserInfo from "../../components/SettingsComponents/UserInfo";
 import ViewProfileButton from "../../components/ViewProfileButton";
+import { ReduxStoreInterface } from "../../Redux/store";
+import { mainPurple } from "../../utils/main.styles";
 
 export default function App() {
   const windowHeight = Dimensions.get("window").height;
@@ -41,6 +42,12 @@ export default function App() {
 
           <View width={"100%"}>
             {isUserLoggedIn === true ? <ViewProfileButton /> : <></>}
+          </View>
+
+          <View height={10} />
+
+          <View width={"100%"}>
+            <GeminiApiKeyButton />
           </View>
 
           <View height={10} />

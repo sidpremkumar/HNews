@@ -1,18 +1,37 @@
-import * as Keychain from "react-native-keychain";
 import CookieManager from "@react-native-cookies/cookies";
-import Bluebird from "bluebird";
+import { parse } from "node-html-parser";
+import * as Keychain from "react-native-keychain";
 import {
   AlgoliaGetPostRaw,
   GetCommentResponseRaw,
-  GetStoryResponseRaw,
-  GetUserResponseRaw,
+  GetUserResponseRaw
 } from "./HackerNewsClient.types";
-import { parse } from "node-html-parser";
 
 class HackerNewsClient {
   private baseURL: string;
+  private requestQueue: Promise<any>[] = [];
+  private maxConcurrentRequests = 3;
+
   constructor() {
     this.baseURL = "https://hacker-news.firebaseio.com/v0/";
+  }
+
+  private async rateLimitedRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+    // Wait if we have too many concurrent requests
+    while (this.requestQueue.length >= this.maxConcurrentRequests) {
+      await Promise.race(this.requestQueue);
+    }
+
+    const request = requestFn();
+    this.requestQueue.push(request);
+
+    try {
+      const result = await request;
+      return result;
+    } finally {
+      // Remove completed request from queue
+      this.requestQueue = this.requestQueue.filter(p => p !== request);
+    }
   }
 
   /**
@@ -74,8 +93,27 @@ class HackerNewsClient {
    * Use Algolia to get all data for a post
    */
   async getAllData(postId: number) {
-    const result = await fetch(`https://hn.algolia.com/api/v1/items/${postId}`);
-    return result.json() as unknown as AlgoliaGetPostRaw;
+    return this.rateLimitedRequest(async () => {
+      try {
+        const result = await fetch(`https://hn.algolia.com/api/v1/items/${postId}`);
+
+        if (!result.ok) {
+          console.error(`API Error: ${result.status} ${result.statusText}`);
+          throw new Error(`API request failed with status ${result.status}`);
+        }
+
+        const contentType = result.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('API returned non-JSON response:', contentType);
+          throw new Error('API returned non-JSON response');
+        }
+
+        return result.json() as unknown as AlgoliaGetPostRaw;
+      } catch (error) {
+        console.error('Error fetching post data:', error);
+        throw error;
+      }
+    });
   }
 
   /**
