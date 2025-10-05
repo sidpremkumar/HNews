@@ -132,6 +132,8 @@ const AISummaryButton: React.FC<AISummaryButtonProps> = ({
 
         // Fetch and extract website content if URL is available and looks like an article
         let websiteContentText = '';
+        let pdfData: { base64Data: string; mimeType: string } | undefined;
+
         if (postUrl && isLikelyArticle(postUrl)) {
             setIsExtractingContent(true);
             try {
@@ -139,8 +141,19 @@ const AISummaryButton: React.FC<AISummaryButtonProps> = ({
                 const contentResult = await fetchAndExtractContent(postUrl);
 
                 if (contentResult.success && contentResult.content) {
-                    websiteContentText = `\n\nWEBSITE CONTENT:\n${contentResult.content}`;
-                    console.log(`Extracted ${contentResult.extractedLength} characters from website (${contentResult.compressionRatio.toFixed(2)}x compression)`);
+                    if (contentResult.extractionMethod === 'pdf' && contentResult.base64Data) {
+                        // Handle PDF content
+                        websiteContentText = `\n\nPDF DOCUMENT:\n${contentResult.content}`;
+                        pdfData = {
+                            base64Data: contentResult.base64Data,
+                            mimeType: contentResult.mimeType || 'application/pdf'
+                        };
+                        console.log(`PDF downloaded and ready for Gemini processing (${contentResult.originalLength} bytes)`);
+                    } else {
+                        // Handle regular website content
+                        websiteContentText = `\n\nWEBSITE CONTENT:\n${contentResult.content}`;
+                        console.log(`Extracted ${contentResult.extractedLength} characters from website (${contentResult.compressionRatio.toFixed(2)}x compression)`);
+                    }
                 } else {
                     console.log('Website content extraction failed:', contentResult.error);
                     websiteContentText = '\n\nWEBSITE CONTENT: Unable to extract content from the linked website.';
@@ -184,15 +197,13 @@ Requirements:
 - Include 3-5 quotes per section
 - Make it feel like you're hearing directly from the article and community
 - Be concise but comprehensive`,
+                pdfData: pdfData, // Include PDF data if available
             },
         ];
 
         try {
             const response = await generateResponse(conversation);
-            console.log('AI Response:', response);
-
             if (response && response.text && response.text.trim()) {
-                console.log('Setting AI summary:', response.text);
 
                 // Cache the summary
                 dispatch(cacheAISummary({
@@ -283,7 +294,7 @@ Requirements:
             <View
                 flexDirection="row"
                 alignItems="center"
-                justifyContent={hasCached ? "space-between" : "center"}
+                justifyContent="center"
             >
                 {/* Main Action Button - Only show if no cached summary or if summary is hidden */}
                 {(!hasCached || !showAISummary) && (
@@ -291,7 +302,6 @@ Requirements:
                         onPress={handleGenerateSummary}
                         disabled={isAILoading || isExtractingContent || isAutoGenerating}
                         style={{
-                            flex: hasCached ? 1 : undefined,
                             flexDirection: 'row',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -299,7 +309,6 @@ Requirements:
                             padding: 12,
                             borderRadius: 8,
                             opacity: isAILoading || isExtractingContent || isAutoGenerating ? 0.7 : 1,
-                            marginRight: hasCached ? 8 : 0,
                         }}
                     >
                         {isAILoading || isExtractingContent || isAutoGenerating ? (
@@ -323,48 +332,12 @@ Requirements:
                         </Text>
                     </TouchableOpacity>
                 )}
-
-                {/* Small Regenerate Button - Only show if summary is visible */}
-                {hasCached && showAISummary && (
-                    <TouchableOpacity
-                        onPress={() => {
-                            // Clear the cached summary and regenerate
-                            dispatch(clearAISummary({ postId }));
-                            setShowAISummary(false);
-                            // The next click will regenerate
-                        }}
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: '#6c757d',
-                            paddingHorizontal: 8,
-                            paddingVertical: 6,
-                            borderRadius: 6,
-                        }}
-                    >
-                        <Feather name="refresh-cw" color="white" size={14} />
-                        <Text
-                            color="white"
-                            fontSize="$2"
-                            fontWeight="500"
-                            marginLeft={4}
-                        >
-                            Regenerate
-                        </Text>
-                    </TouchableOpacity>
-                )}
             </View>
 
             {/* AI Summary Display */}
             {showAISummary && cachedSummary && (
                 <View
                     marginTop={12}
-                    padding={12}
-                    backgroundColor="#f8f9fa"
-                    borderRadius={6}
-                    borderLeftWidth={3}
-                    borderLeftColor={mainPurple}
                 >
                     <View
                         flexDirection="row"
@@ -388,8 +361,24 @@ Requirements:
                                 color="#6c757d"
                                 marginRight={8}
                             >
-                                {new Date(cachedSummary.createdAt).toLocaleTimeString()}
+                                {new Date(cachedSummary.createdAt).toLocaleDateString()} {new Date(cachedSummary.createdAt).toLocaleTimeString()}
                             </Text>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    // Clear the cached summary and regenerate
+                                    dispatch(clearAISummary({ postId }));
+                                    setShowAISummary(false);
+                                    // The next click will regenerate
+                                }}
+                                style={{
+                                    padding: 4,
+                                    borderRadius: 4,
+                                    backgroundColor: '#e9ecef',
+                                    marginRight: 8,
+                                }}
+                            >
+                                <Feather name="refresh-cw" color="#6c757d" size={16} />
+                            </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => setShowAISummary(false)}
                                 style={{

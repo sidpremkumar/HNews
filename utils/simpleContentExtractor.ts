@@ -12,6 +12,12 @@
  */
 export const extractReadableContent = (html: string): string | null => {
     try {
+        // Check if html is valid
+        if (!html || typeof html !== 'string') {
+            console.log('Invalid HTML content provided');
+            return null;
+        }
+
         // Remove script and style tags completely
         let cleanHtml = html
             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')

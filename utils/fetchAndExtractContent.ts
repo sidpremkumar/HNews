@@ -1,3 +1,4 @@
+import { extractTextFromPDF, isPDFUrl } from './pdfExtractor';
 import { getContentExtractionSummary } from './simpleContentExtractor';
 
 /**
@@ -12,17 +13,74 @@ export const fetchAndExtractContent = async (url: string): Promise<{
     content: string | null;
     title?: string;
     url: string;
-    extractionMethod: 'readability' | 'fallback' | 'failed';
+    extractionMethod: 'readability' | 'fallback' | 'failed' | 'pdf';
     processingTime: number;
     originalLength: number;
     extractedLength: number;
     compressionRatio: number;
     error?: string;
+    base64Data?: string;
+    mimeType?: string;
 }> => {
     const startTime = Date.now();
 
     try {
         console.log(`Fetching content from: ${url}`);
+
+        // Check if URL is a PDF file
+        if (isPDFUrl(url)) {
+            console.log('Processing PDF file:', url);
+            const pdfResult = await extractTextFromPDF(url);
+
+            if (pdfResult.success && pdfResult.base64Data) {
+                const endTime = Date.now();
+                const totalTime = endTime - startTime;
+
+                return {
+                    success: true,
+                    content: pdfResult.text || 'PDF Document (ready for Gemini processing)',
+                    title: url.split('/').pop() || 'PDF Document',
+                    url,
+                    extractionMethod: 'pdf',
+                    processingTime: totalTime,
+                    originalLength: pdfResult.base64Data.length,
+                    extractedLength: pdfResult.text?.length || 0,
+                    compressionRatio: 1.0,
+                    base64Data: pdfResult.base64Data,
+                    mimeType: pdfResult.mimeType || 'application/pdf',
+                };
+            } else {
+                return {
+                    success: false,
+                    content: null,
+                    url,
+                    extractionMethod: 'failed',
+                    processingTime: Date.now() - startTime,
+                    originalLength: 0,
+                    extractedLength: 0,
+                    compressionRatio: 0,
+                    error: pdfResult.error || 'PDF extraction failed',
+                };
+            }
+        }
+
+        // Check for other non-HTML files
+        const urlLower = url.toLowerCase();
+        if (urlLower.includes('.doc') || urlLower.includes('.docx') ||
+            urlLower.includes('.txt') || urlLower.includes('.rtf')) {
+            console.log('Skipping content extraction for non-HTML file:', url);
+            return {
+                success: false,
+                content: null,
+                url,
+                extractionMethod: 'failed',
+                processingTime: 0,
+                originalLength: 0,
+                extractedLength: 0,
+                compressionRatio: 0,
+                error: 'File type not supported for content extraction',
+            };
+        }
 
         // Fetch the webpage
         const response = await fetch(url, {
@@ -33,15 +91,46 @@ export const fetchAndExtractContent = async (url: string): Promise<{
                 'Accept-Encoding': 'gzip, deflate',
                 'Connection': 'keep-alive',
             },
-            timeout: 10000, // 10 second timeout
+            // Note: timeout is not supported in React Native fetch
         });
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('text/html') && !contentType.includes('text/plain')) {
+            console.log('Skipping content extraction for non-HTML content type:', contentType);
+            return {
+                success: false,
+                content: null,
+                url,
+                extractionMethod: 'failed',
+                processingTime: Date.now() - startTime,
+                originalLength: 0,
+                extractedLength: 0,
+                compressionRatio: 0,
+                error: 'Content type not supported for extraction',
+            };
+        }
+
         const html = await response.text();
         console.log(`Fetched ${html.length} characters of HTML`);
+
+        if (!html || html.length === 0) {
+            console.log('Empty content received');
+            return {
+                success: false,
+                content: null,
+                url,
+                extractionMethod: 'failed',
+                processingTime: Date.now() - startTime,
+                originalLength: 0,
+                extractedLength: 0,
+                compressionRatio: 0,
+                error: 'Empty content received',
+            };
+        }
 
         // Extract clean content
         const extractionResult = getContentExtractionSummary(html, url);
@@ -52,7 +141,7 @@ export const fetchAndExtractContent = async (url: string): Promise<{
         return {
             success: extractionResult.success,
             content: extractionResult.finalContent,
-            title: extractTitle(html),
+            title: extractTitle(html) || undefined,
             url,
             extractionMethod: extractionResult.method as 'readability' | 'fallback' | 'failed',
             processingTime: totalTime,
@@ -106,6 +195,11 @@ export const isLikelyArticle = (url: string): boolean => {
     try {
         const urlObj = new URL(url);
         const hostname = urlObj.hostname.toLowerCase();
+
+        // Include PDFs as they often contain articles
+        if (isPDFUrl(url)) {
+            return true;
+        }
 
         // Skip common non-article domains
         const skipDomains = [

@@ -93,12 +93,20 @@ class HackerNewsClient {
    * Use Algolia to get all data for a post
    */
   async getAllData(postId: number) {
+    // Validate postId before making any requests
+    if (!postId || typeof postId !== 'number' || postId <= 0) {
+      throw new Error(`Invalid post ID: ${postId}. Post ID must be a positive number.`);
+    }
+
     return this.rateLimitedRequest(async () => {
       try {
         const result = await fetch(`https://hn.algolia.com/api/v1/items/${postId}`);
 
         if (!result.ok) {
-          console.error(`API Error: ${result.status} ${result.statusText}`);
+          // Only log non-404 errors to reduce console spam
+          if (result.status !== 404) {
+            console.error(`API Error: ${result.status} ${result.statusText}`);
+          }
           throw new Error(`API request failed with status ${result.status}`);
         }
 
@@ -114,6 +122,116 @@ class HackerNewsClient {
         throw error;
       }
     });
+  }
+
+  /**
+   * Get post data using official Hacker News API first, then try Algolia for richer data
+   */
+  async getAllDataWithFallback(postId: number) {
+    // Validate postId before making any requests
+    if (!postId || typeof postId !== 'number' || postId <= 0) {
+      throw new Error(`Invalid post ID: ${postId}. Post ID must be a positive number.`);
+    }
+
+    return this.rateLimitedRequest(async () => {
+      try {
+        // Try official Hacker News API first (more reliable)
+        const url = new URL(`item/${postId}.json?print=pretty`, this.baseURL).href;
+        const originalResult = await fetch(url);
+
+        if (originalResult.ok) {
+          const originalData = await originalResult.json();
+
+          // Check if the post exists (API returns null for deleted posts)
+          if (!originalData || originalData === null) {
+            throw new Error(`Post ${postId} not found or deleted`);
+          }
+
+          // Convert original API format to Algolia format
+          const convertedData = this.convertOriginalToAlgoliaFormat(originalData);
+
+          // Try to get richer data from Algolia (comments, etc.)
+          try {
+            const algoliaResult = await fetch(`https://hn.algolia.com/api/v1/items/${postId}`);
+            if (algoliaResult.ok) {
+              const algoliaData = await algoliaResult.json() as unknown as AlgoliaGetPostRaw;
+              // Merge Algolia's richer comment data if available
+              if (algoliaData.children && algoliaData.children.length > 0) {
+                convertedData.children = algoliaData.children;
+              }
+            }
+          } catch (algoliaError) {
+            // Algolia failed, but we have the basic data from official API
+            console.log(`📝 Using official API data for post ${postId} (Algolia unavailable)`);
+          }
+
+          return convertedData;
+        } else {
+          console.log(`❌ Official API failed for ${postId}: ${originalResult.status}`);
+        }
+
+        // If official API fails, try Algolia as fallback
+        console.log(`🔄 Official API failed for post ${postId}, trying Algolia...`);
+        const algoliaResult = await fetch(`https://hn.algolia.com/api/v1/items/${postId}`);
+
+        console.log(`📡 Algolia response for ${postId}: ${algoliaResult.status} ${algoliaResult.statusText}`);
+
+        if (algoliaResult.ok) {
+          const contentType = algoliaResult.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const algoliaData = await algoliaResult.json() as unknown as AlgoliaGetPostRaw;
+            console.log(`✅ Successfully got data from Algolia for post ${postId}`);
+            return algoliaData;
+          } else {
+            console.log(`❌ Algolia returned non-JSON for ${postId}: ${contentType}`);
+          }
+        } else {
+          console.log(`❌ Algolia failed for ${postId}: ${algoliaResult.status}`);
+        }
+
+        throw new Error(`Both official API and Algolia failed for post ${postId}`);
+      } catch (error) {
+        console.error('Error fetching post data with fallback:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Convert original Hacker News API format to Algolia format
+   */
+  private convertOriginalToAlgoliaFormat(originalData: any): AlgoliaGetPostRaw {
+    // Validate that we have the required data
+    if (!originalData || typeof originalData !== 'object') {
+      throw new Error('Invalid original data format');
+    }
+
+    if (!originalData.id) {
+      throw new Error('Missing required id field in original data');
+    }
+
+    return {
+      id: originalData.id,
+      created_at: originalData.time ? new Date(originalData.time * 1000).toISOString() : new Date().toISOString(),
+      author: originalData.by || 'unknown',
+      title: originalData.title || '',
+      url: originalData.url || null,
+      text: originalData.text || null,
+      points: originalData.score || 0,
+      parent_id: originalData.parent || null,
+      children: originalData.kids ? originalData.kids.map((kidId: number) => ({
+        id: kidId,
+        created_at: new Date().toISOString(),
+        created_at_i: Math.floor(Date.now() / 1000),
+        type: 'comment',
+        author: 'unknown',
+        text: null,
+        points: 0,
+        parent_id: originalData.id,
+        story_id: originalData.id,
+        children: []
+      })) : []
+    };
   }
 
   /**
@@ -238,6 +356,39 @@ class HackerNewsClient {
     await Keychain.setGenericPassword(username, password);
 
     return true;
+  }
+
+  /**
+   * Save Gemini API key to secure storage
+   */
+  async saveGeminiApiKey(apiKey: string): Promise<void> {
+    await Keychain.setGenericPassword("gemini_api_key", apiKey, {
+      service: "HNews_Gemini_API",
+    });
+  }
+
+  /**
+   * Get Gemini API key from secure storage
+   */
+  async getGeminiApiKey(): Promise<string | null> {
+    try {
+      const credentials = await Keychain.getGenericPassword({
+        service: "HNews_Gemini_API",
+      });
+      return credentials ? credentials.password : null;
+    } catch (error) {
+      console.error("Error getting Gemini API key:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Clear Gemini API key from secure storage
+   */
+  async clearGeminiApiKey(): Promise<void> {
+    await Keychain.resetGenericPassword({
+      service: "HNews_Gemini_API",
+    });
   }
 
   /**

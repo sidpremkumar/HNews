@@ -78,3 +78,6 @@ yarn-error.*
 
 *.ipa
 *.aab
+
+# iOS folder for CNG/Prebuild
+/ios

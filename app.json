@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "HNews",
-    "slug": "HNews",
-    "version": "2.0.1",
+    "slug": "hnews",
+    "version": "3.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -11,7 +11,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#fb651f"
     },
-    "scheme": "HNews.App",
+    "scheme": "hnews",
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
@@ -28,18 +28,20 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router"],
+    "plugins": ["expo-router", "expo-font"],
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
-        "projectId": "15cf4545-901a-4d49-8ec7-f18f92a76818"
+        "projectId": "c9db7801-bbd9-437d-a802-376fec2e3b6b"
       }
     },
     "updates": {
-      "enabled": false
+      "enabled": false,
+      "url": "https://u.expo.dev/15cf4545-901a-4d49-8ec7-f18f92a76818"
     },
-    "runtimeVersion": "exposdk:54.0.12"
+    "runtimeVersion": "exposdk:54.0.12",
+    "owner": "sid.premkumar"
   }
 }

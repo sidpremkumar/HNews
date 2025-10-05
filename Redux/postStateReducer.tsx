@@ -57,6 +57,23 @@ export const counterSlice = createSlice({
       state.postDataMapping[action.payload.postId] = {
         storyData: action.payload.storyData,
       };
+
+      // Limit the size of postDataMapping to prevent memory issues
+      const maxEntries = 1000;
+      const entries = Object.keys(state.postDataMapping);
+      if (entries.length > maxEntries) {
+        // Remove oldest entries (keep the most recent ones)
+        const sortedEntries = entries
+          .map(key => ({ key, postId: parseInt(key) }))
+          .sort((a, b) => b.postId - a.postId)
+          .slice(0, maxEntries);
+
+        const newMapping: { [key: number]: { storyData: AlgoliaGetPostRaw | undefined } } = {};
+        sortedEntries.forEach(entry => {
+          newMapping[entry.postId] = state.postDataMapping[entry.postId];
+        });
+        state.postDataMapping = newMapping;
+      }
     },
   },
   selectors: {},
@@ -68,6 +85,6 @@ export const {
   increaseUpvoteNumber,
   decreaseUpvoteNumber,
 } = counterSlice.actions;
-export const {} = counterSlice.selectors;
+export const { } = counterSlice.selectors;
 
 export default counterSlice.reducer;

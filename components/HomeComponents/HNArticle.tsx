@@ -33,23 +33,22 @@ const HNArticleRoot: React.FC<{
   postNumber: number;
 }> = memo(({ postId, postNumber }) => {
   const dispatch = useDispatch();
-  const postDataMapping = useSelector(
-    (state: ReduxStoreInterface) => state.postState.postDataMapping
+  const postData = useSelector(
+    (state: ReduxStoreInterface) => state.postState.postDataMapping[postId]
   );
-  const postData = postDataMapping[postId];
   const [hasTriedFetch, setHasTriedFetch] = useState(false);
+
+  // Debug logging (only in development and less frequent)
+  console.log(`🔍 HNArticle ${postId}: postData=${!!postData}, hasTriedFetch=${hasTriedFetch}`);
 
   useEffect(() => {
     // Only try to fetch if we haven't tried before and data doesn't exist
-    if (postDataMapping[postId] === undefined && !hasTriedFetch) {
+    if (postData === undefined && !hasTriedFetch) {
       setHasTriedFetch(true);
 
-      Promise.resolve().then(async () => {
+      const fetchData = async () => {
         try {
-          /**
-           * Get all our data from algolia
-           */
-          const allData = await HackerNewsClient.getAllData(postId);
+          const allData = await HackerNewsClient.getAllDataWithFallback(postId);
           dispatch(
             setStoryResponseRaw({
               storyData: allData,
@@ -57,18 +56,25 @@ const HNArticleRoot: React.FC<{
             })
           );
         } catch (error) {
-          console.error(`Failed to fetch data for post ${postId}:`, error);
+          // Silently handle 404s and invalid post IDs
+          if (!(error as Error).message?.includes('404') &&
+            !(error as Error).message?.includes('status 404') &&
+            !(error as Error).message?.includes('Invalid post ID')) {
+            console.error(`Failed to fetch data for post ${postId}:`, error);
+          }
           // Mark as failed so we don't keep retrying
           dispatch(
             setStoryResponseRaw({
-              storyData: undefined, // Mark as failed
+              storyData: undefined,
               postId,
             })
           );
         }
-      });
+      };
+
+      fetchData();
     }
-  }, [postId, postDataMapping, dispatch, hasTriedFetch]); // Add hasTriedFetch dependency
+  }, [postId, postData, dispatch, hasTriedFetch]);
 
   if (!postData) {
     return (

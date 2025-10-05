@@ -1,20 +1,26 @@
 import * as WebBrowser from "expo-web-browser";
 import { Dimensions, Keyboard, StyleSheet } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ScrollView, Text, View } from "tamagui";
 import GeminiApiKeyButton from "../../components/SettingsComponents/GeminiApiKeyButton";
 import LoginButton from "../../components/SettingsComponents/LoginButton";
 import LogoutButton from "../../components/SettingsComponents/LogoutButton";
 import UserInfo from "../../components/SettingsComponents/UserInfo";
 import ViewProfileButton from "../../components/ViewProfileButton";
+import { clearGeminiApiKey } from "../../Redux/settingsReducer";
 import { ReduxStoreInterface } from "../../Redux/store";
-import { mainPurple } from "../../utils/main.styles";
+import HackerNewsClient from "../../utils/HackerNewsClient/HackerNewsClient";
+import { mainPurple, spotifyBlack } from "../../utils/main.styles";
 
 export default function App() {
   const windowHeight = Dimensions.get("window").height;
+  const dispatch = useDispatch();
   const isUserLoggedIn = useSelector(
     (state: ReduxStoreInterface) => state.authUser.userLoggedIn
+  );
+  const geminiApiKeySet = useSelector(
+    (state: ReduxStoreInterface) => state.settings.geminiApiKeySet
   );
 
   return (
@@ -31,41 +37,82 @@ export default function App() {
           width={"90%"}
         >
           <View width={"100%"}>
-            <UserInfo />
-          </View>
-
-          <View width={"100%"}>
-            {isUserLoggedIn === true ? <LogoutButton /> : <LoginButton />}
-          </View>
-
-          <View height={10} />
-
-          <View width={"100%"}>
-            {isUserLoggedIn === true ? <ViewProfileButton /> : <></>}
+            <Text color="$gray10" fontSize="$3" marginBottom={8} marginLeft={4}>
+              Hacker News Account
+            </Text>
+            <View gap={8}>
+              <UserInfo />
+              {isUserLoggedIn === true ? <LogoutButton /> : <LoginButton />}
+              {isUserLoggedIn === true && <ViewProfileButton />}
+            </View>
           </View>
 
           <View height={10} />
 
           <View width={"100%"}>
-            <GeminiApiKeyButton />
-          </View>
-
-          <View height={10} />
-
-          <View width={"100%"}>
-            <TouchableOpacity
-              onPress={async () => {
-                await WebBrowser.openBrowserAsync(
-                  `https://github.com/sidpremkumar/HNews`
-                );
-              }}
-            >
-              <View backgroundColor={mainPurple} padding={15} borderRadius={10}>
-                <Text color="white" fontSize={"$7"}>
-                  Source Code
+            {geminiApiKeySet ? (
+              <View>
+                <Text color="$gray10" fontSize="$3" marginBottom={8} marginLeft={4}>
+                  Gemini API Key Set - Actions
                 </Text>
+                <View gap={8}>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      await WebBrowser.openBrowserAsync(
+                        "https://aistudio.google.com/usage"
+                      );
+                    }}
+                  >
+                    <View backgroundColor={spotifyBlack} padding={15} borderRadius={10}>
+                      <Text color="white" fontSize={"$7"}>
+                        📊 See API Usage
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={async () => {
+                      // Clear from keychain
+                      await HackerNewsClient.clearGeminiApiKey();
+
+                      // Update Redux state
+                      dispatch(clearGeminiApiKey());
+                    }}
+                  >
+                    <View backgroundColor="#ff4444" padding={15} borderRadius={10}>
+                      <Text color="white" fontSize={"$7"}>
+                        🗑️ Clear API Key
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </TouchableOpacity>
+            ) : (
+              <GeminiApiKeyButton />
+            )}
+          </View>
+
+          <View height={10} />
+
+          <View width={"100%"}>
+            <Text color="$gray10" fontSize="$3" marginBottom={8} marginLeft={4}>
+              About
+            </Text>
+            <View gap={8}>
+              <TouchableOpacity
+                onPress={async () => {
+                  await WebBrowser.openBrowserAsync(
+                    `https://github.com/sidpremkumar/HNews`
+                  );
+                }}
+              >
+                <View backgroundColor={mainPurple} padding={15} borderRadius={10}>
+                  <Text color="white" fontSize={"$7"}>
+                    📱 Source Code
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>

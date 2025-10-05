@@ -9,6 +9,10 @@ import { ReduxStoreInterface } from '../Redux/store';
 export interface ConversationMessage {
     role: 'user' | 'assistant' | 'system';
     body: string;
+    pdfData?: {
+        base64Data: string;
+        mimeType: string;
+    };
 }
 
 export interface GeminiAIResponse {
@@ -94,10 +98,24 @@ export const useGeminiAI = (options: UseGeminiAIOptions = {}): UseGeminiAIReturn
 
         try {
             // Convert conversation to Gemini format
-            const contents = conversation.map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : msg.role === 'system' ? 'user' : msg.role,
-                parts: [{ text: msg.body }]
-            }));
+            const contents = conversation.map(msg => {
+                const parts: any[] = [{ text: msg.body }];
+
+                // Add PDF data if present
+                if (msg.pdfData) {
+                    parts.push({
+                        inline_data: {
+                            mime_type: msg.pdfData.mimeType,
+                            data: msg.pdfData.base64Data
+                        }
+                    });
+                }
+
+                return {
+                    role: msg.role === 'assistant' ? 'model' : msg.role === 'system' ? 'user' : msg.role,
+                    parts
+                };
+            });
 
             const requestBody = {
                 contents,
@@ -129,14 +147,12 @@ export const useGeminiAI = (options: UseGeminiAIOptions = {}): UseGeminiAIReturn
             }
 
             const data = await response.json();
-            console.log('Full Gemini API Response:', JSON.stringify(data, null, 2));
 
             if (!data.candidates || data.candidates.length === 0) {
                 throw new Error('No response generated from AI');
             }
 
             const candidate = data.candidates[0];
-            console.log('First candidate:', JSON.stringify(candidate, null, 2));
 
             // Check if the response was blocked by safety filters
             if (candidate.finishReason === 'SAFETY') {
@@ -152,7 +168,6 @@ export const useGeminiAI = (options: UseGeminiAIOptions = {}): UseGeminiAIReturn
             }
 
             const text = candidate.content?.parts?.[0]?.text || '';
-            console.log('Extracted text:', text);
 
             if (!text.trim()) {
                 throw new Error('AI returned empty response. This might be due to content policy restrictions.');

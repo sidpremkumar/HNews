@@ -147,23 +147,7 @@ const GeminiApiKeyButton: React.FC<{}> = () => {
 
     return (
         <View width={"100%"}>
-            {geminiApiKeySet ? (
-                <View>
-                    <View backgroundColor={mainPurple} padding={15} borderRadius={10} marginBottom={10}>
-                        <Text color="white" fontSize={"$7"} textAlign="center">
-                            ✅ Gemini API Key Set
-                        </Text>
-                    </View>
-                    <Button
-                        backgroundColor="#ff4444"
-                        color="white"
-                        onPress={handleClearApiKey}
-                        borderRadius={10}
-                    >
-                        Clear API Key
-                    </Button>
-                </View>
-            ) : (
+            {!geminiApiKeySet && (
                 <Dialog modal>
                     <Dialog.Trigger asChild>
                         <View>
