@@ -6,6 +6,7 @@ import {
     useToast,
     VStack,
 } from '@gluestack-ui/themed';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
@@ -48,7 +49,6 @@ const AISummaryButton: React.FC<AISummaryButtonProps> = ({
     const [showAISummary, setShowAISummary] = useState<boolean>(false);
     const [isExtractingContent, setIsExtractingContent] = useState<boolean>(false);
     const [showApiKeyError, setShowApiKeyError] = useState<boolean>(false);
-    const [isAutoGenerating, setIsAutoGenerating] = useState<boolean>(false);
 
     // Get cached summary and check if it exists
     const cachedSummary = useSelector((state: ReduxStoreInterface) =>
@@ -67,23 +67,13 @@ const AISummaryButton: React.FC<AISummaryButtonProps> = ({
         }
     }, [hasApiKey, showApiKeyError]);
 
-    // Auto-show cached summary or auto-generate when component mounts (if API key available)
+    // Auto-show cached summary when component mounts (but don't auto-generate)
     React.useEffect(() => {
-        if (hasApiKey && !isAILoading && !isExtractingContent) {
-            if (hasCached && cachedSummary) {
-                console.log('🔵 Auto-showing cached summary');
-                setShowAISummary(true);
-            } else if (!hasCached) {
-                console.log('🔵 Auto-generating summary (no cache)');
-                setIsAutoGenerating(true);
-                // Small delay to ensure component is fully mounted
-                const timer = setTimeout(() => {
-                    handleGenerateSummary();
-                }, 100);
-                return () => clearTimeout(timer);
-            }
+        if (hasCached && cachedSummary) {
+            console.log('🔵 Auto-showing cached summary');
+            setShowAISummary(true);
         }
-    }, [hasApiKey, hasCached, cachedSummary, isAILoading, isExtractingContent]);
+    }, [hasCached, cachedSummary]);
 
     const handleGenerateSummary = async () => {
         console.log('🔵 AISummaryButton: handleGenerateSummary called');
@@ -219,7 +209,6 @@ Requirements:
                 }));
 
                 setShowAISummary(true);
-                setIsAutoGenerating(false);
 
                 // Show success toast
                 toast.show({
@@ -259,7 +248,6 @@ Requirements:
             }
         } catch (error) {
             console.error('Error generating summary:', error);
-            setIsAutoGenerating(false);
             toast.show({
                 placement: 'top',
                 render: ({ id }) => {
@@ -296,11 +284,11 @@ Requirements:
                 alignItems="center"
                 justifyContent="center"
             >
-                {/* Main Action Button - Only show if no cached summary or if summary is hidden */}
+                {/* Main Action Button - Always show if no cached summary, or show toggle if cached */}
                 {(!hasCached || !showAISummary) && (
                     <TouchableOpacity
                         onPress={handleGenerateSummary}
-                        disabled={isAILoading || isExtractingContent || isAutoGenerating}
+                        disabled={isAILoading || isExtractingContent}
                         style={{
                             flexDirection: 'row',
                             alignItems: 'center',
@@ -308,10 +296,10 @@ Requirements:
                             backgroundColor: showApiKeyError ? '#dc3545' : mainPurple,
                             padding: 12,
                             borderRadius: 8,
-                            opacity: isAILoading || isExtractingContent || isAutoGenerating ? 0.7 : 1,
+                            opacity: isAILoading || isExtractingContent ? 0.7 : 1,
                         }}
                     >
-                        {isAILoading || isExtractingContent || isAutoGenerating ? (
+                        {isAILoading || isExtractingContent ? (
                             <ActivityIndicator color="white" size="small" />
                         ) : (
                             <Feather name="zap" color="white" size={20} />
@@ -322,8 +310,8 @@ Requirements:
                             fontWeight="600"
                             marginLeft={8}
                         >
-                            {isAILoading || isExtractingContent || isAutoGenerating
-                                ? (isExtractingContent ? 'Extracting Content...' : isAutoGenerating ? 'Auto-Generating...' : 'Generating Summary...')
+                            {isAILoading || isExtractingContent
+                                ? (isExtractingContent ? 'Extracting Content...' : 'Generating Summary...')
                                 : showApiKeyError
                                     ? '⚠️ API Key Required'
                                     : hasCached
@@ -489,6 +477,51 @@ Requirements:
                     >
                         {cachedSummary.summary}
                     </Markdown>
+                </View>
+            )}
+
+            {/* Chat Button - Only show when AI summary is displayed */}
+            {showAISummary && cachedSummary && (
+                <View
+                    marginTop={12}
+                    alignItems="center"
+                >
+                    <TouchableOpacity
+                        onPress={() => {
+                            // Navigate to chat screen with post data
+                            router.push({
+                                pathname: '/post/chat',
+                                params: {
+                                    postId: postId.toString(),
+                                    postTitle: postTitle || '',
+                                    postUrl: postUrl || '',
+                                    postAuthor: postAuthor || '',
+                                    postPoints: postPoints?.toString() || '0',
+                                    aiSummary: cachedSummary.summary,
+                                }
+                            });
+                        }}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#007AFF',
+                            paddingHorizontal: 20,
+                            paddingVertical: 12,
+                            borderRadius: 20,
+                            minWidth: 120,
+                        }}
+                    >
+                        <Feather name="message-circle" color="white" size={18} />
+                        <Text
+                            color="white"
+                            fontSize="$4"
+                            fontWeight="600"
+                            marginLeft={8}
+                        >
+                            Chat
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             )}
         </View>

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, RefreshControl, View } from "react-native";
+import { Animated, FlatList, RefreshControl, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { useDispatch, useSelector } from "react-redux";
 import { Image, Text } from "tamagui";
@@ -33,6 +33,9 @@ export default function App() {
     const [displayedCount, setDisplayedCount] = useState(50);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+    // Animation for content transition
+    const contentOpacity = useRef(new Animated.Value(1)).current;
+
     // Simple data computation - just show the stories we want to display
     const data = useMemo(() => {
         if (!allStories.length) return [];
@@ -62,6 +65,20 @@ export default function App() {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Start content transition animation
+                Animated.sequence([
+                    Animated.timing(contentOpacity, {
+                        toValue: 0.3,
+                        duration: 150,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(contentOpacity, {
+                        toValue: 1,
+                        duration: 300,
+                        useNativeDriver: true,
+                    }),
+                ]).start();
+
                 const currentFilter = filterSelected?.title || "Welcome";
                 let stories;
 
@@ -100,7 +117,7 @@ export default function App() {
         if (filterSelected) {
             fetchData();
         }
-    }, [filterSelected?.title, dispatch]);
+    }, [filterSelected?.title, dispatch, contentOpacity]);
 
     // Safe refresh effect - only runs when refreshing is true
     useEffect(() => {
@@ -149,7 +166,7 @@ export default function App() {
 
     const renderItem = useCallback(({ item, index }: { item: number; index: number }) => {
         return (
-            <View style={{ marginHorizontal: 5, marginVertical: 5 }}>
+            <View style={{ marginHorizontal: 5, marginVertical: 2 }}>
                 <HNArticle postId={item} postNumber={index} />
             </View>
         );
@@ -169,75 +186,160 @@ export default function App() {
     }, [isLoadingMore, displayedCount, allStories.length]);
 
     const ListHeaderComponent = useMemo(() => (
-        <View style={{ marginLeft: 10, marginBottom: 0 }}>
-            <Text fontSize={"$5"}>{today.format("dddd DD MMMM, YYYY")}</Text>
-            <View style={{ flexDirection: "row", marginTop: 5 }}>
-                <Image
-                    src={require("../../assets/images/ycLogo.png")}
-                    height={30}
-                    width={30}
-                />
-                <View style={{ justifyContent: "center", paddingLeft: 5 }}>
-                    <Text fontSize={"$8"} fontWeight={"bold"}>
-                        Hacker News
-                    </Text>
-                </View>
-            </View>
+        <View style={{
+            marginLeft: 8,
+            marginRight: 8,
+            marginBottom: 2,
+            paddingTop: 4,
+        }}>
+            {/* Compact Date */}
+            <Text
+                fontSize={"$3"}
+                color={"#8e8e93"}
+                fontWeight={"400"}
+                letterSpacing={0.2}
+                style={{ marginBottom: 6 }}
+            >
+                {today.format("dddd, MMMM DD")}
+            </Text>
 
-            <View>
-                <ScrollView
-                    horizontal
-                    style={{
-                        overflow: "visible",
-                        marginVertical: 10,
-                    }}
-                >
-                    {filterPills.map((data) => (
-                        <FilterPill data={data} key={data.title} />
-                    ))}
-                </ScrollView>
+            {/* Consolidated Header with Logo and Filters */}
+            <View style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderRadius: 16,
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                shadowColor: '#000',
+                shadowOffset: {
+                    width: 0,
+                    height: 2,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+                borderWidth: 1,
+                borderColor: 'rgba(0, 0, 0, 0.05)',
+                flexDirection: 'row',
+                alignItems: 'center',
+                minHeight: 44,
+            }}>
+                {/* YC Logo - Seamless Integration */}
+                <View style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 8,
+                    flexShrink: 0,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                    borderWidth: 0.5,
+                    borderColor: 'rgba(0, 0, 0, 0.05)',
+                }}>
+                    <Image
+                        src={require("../../assets/images/ycLogo.png")}
+                        height={18}
+                        width={18}
+                        borderRadius={3}
+                    />
+                </View>
+
+                {/* Filter Pills Container */}
+                <View style={{
+                    flex: 1,
+                    overflow: 'hidden',
+                }}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{
+                            alignItems: 'center',
+                            paddingRight: 8,
+                        }}
+                        style={{
+                            flex: 1,
+                        }}
+                    >
+                        {filterPills.map((data) => (
+                            <FilterPill data={data} key={data.title} />
+                        ))}
+                    </ScrollView>
+                </View>
             </View>
         </View>
     ), [today, filterPills]);
 
     return (
-        <View style={{ flex: 1, paddingTop: 60 }}>
-            <FlatList
-                ref={flatListRef}
-                data={data}
-                renderItem={renderItem}
-                keyExtractor={(item, index) => `post-${item}-${index}`}
-                style={{ flex: 1 }}
-                removeClippedSubviews={true}
-                maxToRenderPerBatch={10}
-                updateCellsBatchingPeriod={100}
-                initialNumToRender={10}
-                windowSize={10}
-                refreshControl={
-                    <RefreshControl
-                        colors={["black"]}
-                        tintColor={"black"}
-                        progressBackgroundColor={"black"}
-                        refreshing={homeScreenRefreshing}
-                        onRefresh={handleRefresh}
-                        progressViewOffset={25}
-                    />
-                }
-                ListHeaderComponent={ListHeaderComponent}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={
-                    isLoadingMore ? (
-                        <View style={{ padding: 20, alignItems: 'center' }}>
-                            <Text style={{ color: 'gray' }}>Loading more posts...</Text>
-                        </View>
-                    ) : displayedCount >= allStories.length && allStories.length > 0 ? (
-                        <View style={{ padding: 20, alignItems: 'center' }}>
-                            <Text style={{ color: 'gray' }}>That's all {allStories.length} posts for {filterSelected?.title || 'this filter'}</Text>
-                        </View>
-                    ) : null
-                }
-            />
+        <View style={{
+            flex: 1,
+            backgroundColor: '#f2f2f7',
+            paddingTop: 60
+        }}>
+            <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
+                <FlatList
+                    ref={flatListRef}
+                    data={data}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => `post-${item}-${index}`}
+                    style={{ flex: 1 }}
+                    removeClippedSubviews={true}
+                    maxToRenderPerBatch={10}
+                    updateCellsBatchingPeriod={100}
+                    initialNumToRender={10}
+                    windowSize={10}
+                    refreshControl={
+                        <RefreshControl
+                            colors={["#8d75e8"]}
+                            tintColor={"#8d75e8"}
+                            progressBackgroundColor={"#ffffff"}
+                            refreshing={homeScreenRefreshing}
+                            onRefresh={handleRefresh}
+                            progressViewOffset={25}
+                        />
+                    }
+                    ListHeaderComponent={ListHeaderComponent}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        isLoadingMore ? (
+                            <View style={{
+                                padding: 24,
+                                alignItems: 'center',
+                                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                marginHorizontal: 16,
+                                marginVertical: 8,
+                                borderRadius: 12,
+                            }}>
+                                <Text style={{
+                                    color: '#8e8e93',
+                                    fontSize: 15,
+                                    fontWeight: '500'
+                                }}>
+                                    Loading more posts...
+                                </Text>
+                            </View>
+                        ) : displayedCount >= allStories.length && allStories.length > 0 ? (
+                            <View style={{
+                                padding: 24,
+                                alignItems: 'center',
+                                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                marginHorizontal: 16,
+                                marginVertical: 8,
+                                borderRadius: 12,
+                            }}>
+                                <Text style={{
+                                    color: '#8e8e93',
+                                    fontSize: 15,
+                                    fontWeight: '500',
+                                    textAlign: 'center'
+                                }}>
+                                    That's all {allStories.length} posts for {filterSelected?.title || 'this filter'}
+                                </Text>
+                            </View>
+                        ) : null
+                    }
+                />
+            </Animated.View>
         </View>
     );
 }

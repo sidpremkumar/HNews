@@ -10,11 +10,17 @@ import { SplashScreen, Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Provider, useDispatch } from "react-redux";
 import { TamaguiProvider } from "tamagui";
+import { loadAISummaryCache } from "../Redux/aiSummaryCacheReducer";
 import { setUserLoggedIn, setUserName } from "../Redux/authUserReducer";
+import { loadChatHistory } from "../Redux/chatHistoryReducer";
+import { loadFavoritesCache } from "../Redux/favoritesReducer";
 import { loadGeminiApiKeyFromStorage } from "../Redux/settingsReducer";
 import store from "../Redux/store";
 import tamaguiConfig from "../tamagui.config";
+import { loadAISummaryCache as loadAISummaryCacheFromStorage } from "../utils/aiSummaryPersistentStorage";
 import { setupAutoCleanup } from "../utils/cacheCleanup";
+import { loadChatHistory as loadChatHistoryFromStorage } from "../utils/chatPersistentStorage";
+import { loadFavoritesCache as loadFavoritesCacheFromStorage } from "../utils/favoritesPersistentStorage";
 import HackerNewsClient from "../utils/HackerNewsClient/HackerNewsClient";
 import { useIsNavigationReady } from "../utils/isNavigationReady";
 // Expo Updates disabled - removed to prevent crashes
@@ -42,7 +48,7 @@ export default function RootLayout() {
       // Setup AI summary cache auto-cleanup
       setupAutoCleanup();
     });
-  });
+  }, []); // Add empty dependency array to run only once
 
   return (
     <Provider store={store}>
@@ -84,6 +90,46 @@ function _RootLayout() {
     Promise.resolve().then(async () => {
       const apiKey = await HackerNewsClient.getGeminiApiKey();
       dispatch(loadGeminiApiKeyFromStorage({ apiKey }));
+    });
+  }, []);
+
+  useEffect(() => {
+    /**
+     * Load AI summary cache from persistent storage when app starts
+     */
+    Promise.resolve().then(async () => {
+      const cachedData = await loadAISummaryCacheFromStorage();
+      dispatch(loadAISummaryCache(cachedData));
+    });
+  }, []);
+
+  useEffect(() => {
+    /**
+     * Load favorites cache from persistent storage when app starts
+     */
+    Promise.resolve().then(async () => {
+      console.log('🔄 Loading favorites from storage...');
+      const favoritesData = await loadFavoritesCacheFromStorage();
+      console.log('📦 Loaded favorites:', {
+        totalFavorites: Object.keys(favoritesData.favorites).length,
+        favorites: Object.keys(favoritesData.favorites)
+      });
+      dispatch(loadFavoritesCache(favoritesData));
+    });
+  }, []);
+
+  useEffect(() => {
+    /**
+     * Load chat history from persistent storage when app starts
+     */
+    Promise.resolve().then(async () => {
+      console.log('🔄 Loading chat history from storage...');
+      const chatData = await loadChatHistoryFromStorage();
+      console.log('💬 Loaded chat history:', {
+        totalChats: Object.keys(chatData.chats).length,
+        chats: Object.keys(chatData.chats)
+      });
+      dispatch(loadChatHistory(chatData));
     });
   }, []);
 

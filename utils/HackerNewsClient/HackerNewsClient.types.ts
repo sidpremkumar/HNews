@@ -19,6 +19,7 @@ export interface GetCommentResponseRaw {
   text: string;
   time: number;
   type: string;
+  score?: number;
 }
 
 export interface GetUserResponseRaw {

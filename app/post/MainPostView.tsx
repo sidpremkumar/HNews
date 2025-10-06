@@ -19,6 +19,7 @@ import AISummaryButton from "../../components/PostComponents/AISummaryButton";
 import CommentDialog from "../../components/PostComponents/CommentDialog";
 import { webViewScript } from "../../components/RecursiveComment";
 import RenderLinkIcon from "../../components/RenderLinkIcon";
+import { getFavoritesCount, isFavorited, toggleFavorite } from "../../Redux/favoritesReducer";
 import {
   decreaseUpvoteNumber,
   increaseUpvoteNumber,
@@ -53,6 +54,19 @@ const MainPostView: React.FC<{}> = () => {
   const postMetadata = currentlyViewingPost
     ? postDataMapping[currentlyViewingPost]
     : undefined;
+  const isPostFavorited = useSelector((state: ReduxStoreInterface) =>
+    isFavorited(state, postMetadata?.storyData?.id ?? 0)
+  );
+  const totalFavorites = useSelector((state: ReduxStoreInterface) =>
+    getFavoritesCount(state)
+  );
+
+  // Debug logging for favorites
+  console.log('🔍 MainPostView favorites debug:', {
+    postId: postMetadata?.storyData?.id,
+    isPostFavorited,
+    totalFavorites
+  });
   const [imageURL, setImageURL] = useState<string | undefined>(undefined);
   const windowHeight = Dimensions.get("window").height;
   const [parsedElement, setParsedElement] = useState<
@@ -159,14 +173,91 @@ const MainPostView: React.FC<{}> = () => {
         <></>
       )}
 
-      {/* This is the share button */}
+      {/* This is the share and favorite buttons */}
       <View
         position="absolute"
         style={{
-          ...mainStyles.standardTopRightButtonOffset,
+          top: 50,
+          right: 10,
         }}
         zIndex={99}
+        flexDirection="row"
+        gap={2}
       >
+        {/* Favorite button */}
+        <TouchableOpacity
+          onPress={() => {
+            if (postMetadata?.storyData) {
+              const wasFavorited = isPostFavorited;
+              dispatch(toggleFavorite({
+                postId: postMetadata.storyData.id,
+                title: postMetadata.storyData.title,
+                author: postMetadata.storyData.author,
+                points: postMetadata.storyData.points,
+                url: postMetadata.storyData.url,
+                domain: urlDomain,
+                createdAt: new Date(postMetadata.storyData.created_at).getTime(),
+              }));
+
+              // Show toast notification
+              toast.show({
+                placement: "top",
+                render: ({ id }) => {
+                  const toastId = "toast-" + id;
+                  return (
+                    <Toast nativeID={toastId}>
+                      <VStack>
+                        <ToastTitle>
+                          {wasFavorited ? "💔 Removed from Favorites" : "❤️ Added to Favorites"}
+                        </ToastTitle>
+                        <ToastDescription>
+                          {wasFavorited
+                            ? "Article removed from your favorites"
+                            : "Article saved to your favorites"
+                          }
+                        </ToastDescription>
+                      </VStack>
+                    </Toast>
+                  );
+                },
+              });
+            }
+          }}
+        >
+          <Button
+            style={{ backgroundColor: "transparent" }}
+            icon={
+              <View
+                style={{
+                  backgroundColor: isPostFavorited ? '#ff3b30' : 'transparent',
+                  borderRadius: 8,
+                  width: 32,
+                  height: 32,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: isPostFavorited ? 0 : 1.5,
+                  borderColor: isPostFavorited ? 'transparent' : '#d1d5db',
+                  shadowColor: isPostFavorited ? '#ff3b30' : 'transparent',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: isPostFavorited ? 0.4 : 0,
+                  shadowRadius: 3,
+                  elevation: isPostFavorited ? 2 : 0,
+                }}
+              >
+                <Feather
+                  name="heart"
+                  color={isPostFavorited ? 'white' : '#6b7280'}
+                  size={16}
+                  style={{
+                    fontWeight: isPostFavorited ? 'bold' : 'normal',
+                  }}
+                />
+              </View>
+            }
+          ></Button>
+        </TouchableOpacity>
+
+        {/* Share button */}
         <TouchableOpacity
           onPress={async () => {
             await WebBrowser.openBrowserAsync(

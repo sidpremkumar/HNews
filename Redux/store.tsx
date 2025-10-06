@@ -2,6 +2,8 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { useDispatch } from "react-redux";
 import aiSummaryCacheReducer from "./aiSummaryCacheReducer";
 import authUserReducer from "./authUserReducer";
+import chatHistoryReducer from "./chatHistoryReducer";
+import favoritesReducer from "./favoritesReducer";
 import homeScreenReducer from "./homeScreenReducer";
 import postStateReducer from "./postStateReducer";
 import settingsReducer from "./settingsReducer";
@@ -14,6 +16,8 @@ const appReducer = combineReducers({
   authUser: authUserReducer,
   settings: settingsReducer,
   aiSummaryCache: aiSummaryCacheReducer,
+  favorites: favoritesReducer,
+  chatHistory: chatHistoryReducer,
 });
 
 // @ts-ignore

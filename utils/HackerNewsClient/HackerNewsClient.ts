@@ -2,6 +2,7 @@ import CookieManager from "@react-native-cookies/cookies";
 import { parse } from "node-html-parser";
 import * as Keychain from "react-native-keychain";
 import {
+  AlgoliaCommentRaw,
   AlgoliaGetPostRaw,
   GetCommentResponseRaw,
   GetUserResponseRaw
@@ -87,6 +88,21 @@ class HackerNewsClient {
       .href;
     const commentInfo = await fetch(url).then((res) => res.json());
     return commentInfo;
+  }
+
+  /**
+   * Get comment score from official HN API
+   */
+  async getCommentScore(commentId: number): Promise<number> {
+    try {
+      console.log(`🔍 Fetching comment details for ID ${commentId}...`);
+      const commentData = await this.getCommentDetails(commentId);
+      console.log(`📊 Comment ${commentId} data:`, { score: commentData.score, by: commentData.by, type: commentData.type });
+      return commentData.score || 0;
+    } catch (error) {
+      console.warn(`Failed to fetch score for comment ${commentId}:`, error);
+      return 0;
+    }
   }
 
   /**
@@ -226,12 +242,28 @@ class HackerNewsClient {
         type: 'comment',
         author: 'unknown',
         text: null,
-        points: 0,
+        points: 0, // Will be updated later with real scores
         parent_id: originalData.id,
         story_id: originalData.id,
         children: []
       })) : []
     };
+  }
+
+  /**
+   * Update comment scores by fetching from official HN API
+   */
+  async updateCommentScores(commentData: AlgoliaCommentRaw): Promise<AlgoliaCommentRaw> {
+    try {
+      const score = await this.getCommentScore(commentData.id);
+      return {
+        ...commentData,
+        points: score
+      };
+    } catch (error) {
+      console.warn(`Failed to update score for comment ${commentData.id}:`, error);
+      return commentData;
+    }
   }
 
   /**

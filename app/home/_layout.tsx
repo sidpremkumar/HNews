@@ -1,9 +1,8 @@
+import { Feather } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
-import { StyleSheet } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import TabBarBottom from "../../components/TabBarBottom";
 import { useDispatch } from "react-redux";
+import TabBarBottom from "../../components/TabBarBottom";
 import { setScrollToTopHomeScreen } from "../../Redux/homeScreenReducer";
 
 export default function Home() {
@@ -30,6 +29,21 @@ export default function Home() {
               onPress={() => {
                 dispatch(setScrollToTopHomeScreen({ newState: true }));
               }}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          title: "Favorites",
+          headerShown: false,
+          tabBarShowLabel: false,
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarBottom
+              color={color}
+              focused={focused}
+              icon={<Feather name="heart" color={color} size={24} />}
             />
           ),
         }}
